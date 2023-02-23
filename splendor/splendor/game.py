@@ -22,5 +22,3 @@ def setup_game(seed=0, players=4):
             ruby=gem_count,
             onyx=gem_count),
         players=(d.Player(),) * players)
-
-print(setup_game(players=4))

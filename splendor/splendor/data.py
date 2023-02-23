@@ -1,6 +1,5 @@
 from typing import NamedTuple
 
-
 class Gems(NamedTuple):
     diamond: float = 0.0
     sapphire: float = 0.0
@@ -16,7 +15,6 @@ ONYX = Gems(onyx=1.0)
 
 class Card(NamedTuple):
     cost: Gems = Gems()
-    tier: int = 0
     points: float = 0
     bonus: Gems = Gems()
 
@@ -42,9 +40,7 @@ class Player(NamedTuple):
 
 class Tabletop(NamedTuple):
     noble_deck: tuple
-    tier_0_deck: tuple
-    tier_1_deck: tuple
-    tier_2_deck: tuple
+    decks: tuple
 
     bank: Bank
     players: tuple
