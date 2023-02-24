@@ -4,6 +4,19 @@ from splendor.types import Bank, Card, Gems, Tabletop
 
 
 class TestTypes(unittest.TestCase):
+    def test_gold_actions(self):
+        self.assertTrue(
+            Bank.is_solvent(
+                Bank.pickup_gold(
+                    Bank(gold=10),
+                    gold=1)))
+
+        self.assertFalse(
+            Bank.is_solvent(
+                Bank.pickup_gold(
+                    Bank(gold=0),
+                    gold=1)))
+
     def test_remove_card_from_deck(self):
         decks = (
             (Card(points=1), Card(points=2), Card(points=3)),

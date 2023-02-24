@@ -1,5 +1,6 @@
 from enum import Enum
 
+import splendor.defs as d
 from splendor.types import Bank, Gems, Player, Tabletop
 
 
@@ -11,6 +12,19 @@ def _get_player(tabletop):
 
 def pick_gems(tabletop, gems):
     player_i, player = _get_player(tabletop)
+
+    # Are you pickup too many?
+    if sum(gems) > d.BANK_TOTAL_GEM_PICKUP_AMOUNT:
+        return False
+
+    # You can't pickup multiples when the threshold for that gem type is too low
+    if any([True for i in range(len(Gems()))
+            if gems[i] > 1 and tabletop.bank[i] <= d.BANK_THRESHOLD_FOR_DOUBLE_GEMS]):
+        return False
+
+    # You can't pick up multiple > 1 gems
+    if len([gems[i] for i in range(len(Gems())) if (gems[i] > 1)]) > 1:
+        return False
 
     # Does the tabletop bank stay solvent?
     new_bank = Bank.subtract_gems(tabletop.bank, gems)
@@ -28,15 +42,51 @@ def pick_gems(tabletop, gems):
             bank=new_bank,
             players=new_players)
 
-    for i in range(len(Gems())):
-        if tabletop.bank[i] < gems[i]:
-            return False
-    return True
+    return None
 
-def reserve_card(tabletop, tier, card=None):
-    raise Exception("Implement reserving cards!")
-    # Handle if the card is hidden to start with (only the player can see it?) flag?!?!
+def reserve_card(tabletop, tier, card_i=None):
+    player_i, player = _get_player(tabletop)
 
+    # Pull from the top of the deck
+    card_i = card_i or d.VISIBLE_TOP_DECK_CARDS
+
+    # Can we reserve?
+    if Player.can_reserve_card(player):
+        # Is the card available in the deck?
+        if (card := Tabletop.get_card(tabletop, tier, card_i)):
+            # We can reserve this card!
+
+            # Give card to player
+            new_player = Player.add_card_to_reserved(player, card)
+
+            # Remove it from the tabletop
+            new_tabletop = Tabletop.remove_card_from_deck(tabletop, tier, card_i)
+
+            # Now we try to pickup gold.
+
+            # We can try to get a gold
+            new_table_bank = Bank.pickup_gold(tabletop.bank, gold=d.GOLD_RESERVATION_AMOUNT)
+            if Bank.is_solvent(new_table_bank):
+                # Bank was reduced gold.
+                new_tabletop = new_tabletop._replace(bank=new_table_bank)
+                # Player bank was added gold
+                new_player = new_player._replace(
+                        bank=Bank.add_gold(
+                            new_player.bank,
+                            gold=d.GOLD_RESERVATION_AMOUNT))
+
+
+            else:
+                # Table bank didn't change
+                # Player gold didn't change
+                # But player was given card (above)
+                pass
+
+            # Update the changes to the player
+            return Tabletop.replace_player(
+                new_tabletop,
+                player_i,
+                new_player)
     return None
 
 def buy_card(tabletop, tier, card_i):
@@ -120,7 +170,5 @@ class ValidPlayerActions(Enum):
 
 def valid_actions(tabletop):
     for action in ValidPlayerActions:
-
-        print(action.value)
         if action.value[0](tabletop, *action.value[1]):
             yield action

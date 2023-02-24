@@ -1,6 +1,8 @@
 import random
 from typing import NamedTuple
 
+from . import defs as d
+
 
 class Gems(NamedTuple):
     diamond: float = 0.0
@@ -31,6 +33,14 @@ class Bank(NamedTuple):
     @staticmethod
     def is_solvent(bank):
         return all([v >= 0 for v in bank])
+
+    @staticmethod
+    def pickup_gold(bank, gold=1):
+        return bank._replace(gold=bank.gold - gold)
+
+    @staticmethod
+    def add_gold(bank, gold=1):
+        return bank._replace(gold=bank.gold + gold)
 
     @staticmethod
     def pay_gems(bank, bonus, gems, allow_gold=True):
@@ -74,12 +84,14 @@ class Card(NamedTuple):
     cost: Gems = Gems()
     points: float = 0
     bonus: Gems = Gems()
+    hidden: bool = True
 
 class Noble(NamedTuple):
     points: float
     cost: Gems
 
 class Player(NamedTuple):
+
     reserved: tuple = ()
     nobles: tuple = ()
     purchased: tuple = ()
@@ -98,7 +110,16 @@ class Player(NamedTuple):
     @staticmethod
     def add_card_to_purchased(player, card):
         return player._replace(
-            purchased=([card] + player.purchased))
+            purchased=((card,) + player.purchased))
+
+    @staticmethod
+    def add_card_to_reserved(player, card):
+        return player._replace(
+            reserved=((card,) + player.reserved))
+
+    @staticmethod
+    def can_reserve_card(player):
+        return len(player.reserved) < d.MAX_PLAYER_RESERVATIONS
 
 def tier_0_deck(seed=None):
     all_cards = (
@@ -255,6 +276,13 @@ class Tabletop(NamedTuple):
             tabletop.decks[tier + 1:])
 
         return tabletop._replace(decks=new_decks)
+
+    @staticmethod
+    def get_card(tabletop, tier, card_i):
+        try:
+            return tabletop.decks[tier][card_i]
+        except IndexError:
+            return False
 
     @staticmethod
     def setup_game(seed=0, players=4):
