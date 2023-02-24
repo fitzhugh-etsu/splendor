@@ -1,12 +1,36 @@
 from enum import Enum
 
-import splendor.buy as buy
-import splendor.data as d
-import splendor.mutate as m
+from splendor.types import Bank, Gems, Player, Tabletop
 
+
+def _get_player(tabletop):
+    player_i = tabletop.turn % len(tabletop.players)
+    player = tabletop.players[player_i]
+
+    return (player_i, player)
 
 def pick_gems(tabletop, gems):
-    raise Exception("Implement picking gems")
+    player_i, player = _get_player(tabletop)
+
+    # Does the tabletop bank stay solvent?
+    new_bank = Bank.subtract_gems(tabletop.bank, gems)
+    if Bank.is_solvent(new_bank):
+        # Add to the player's bank
+        new_player_bank = Bank.add_gems(
+            tabletop.players[player_i].bank,
+            gems)
+
+        new_player = player._replace(bank=new_player_bank)
+
+        new_players = Tabletop.replace_player(tabletop, player_i, new_player)
+
+        return tabletop._replace(
+            bank=new_bank,
+            players=new_players)
+
+    for i in range(len(Gems())):
+        if tabletop.bank[i] < gems[i]:
+            return False
     return True
 
 def reserve_card(tabletop, tier, card=None):
@@ -16,41 +40,49 @@ def reserve_card(tabletop, tier, card=None):
     return None
 
 def buy_card(tabletop, tier, card_i):
-    current_player = tabletop.turn % len(tabletop.players)
+    player_i, player = _get_player(tabletop)
+
     card = tabletop.decks[tier][card_i]
 
     # Can player afford this card?
-    new_player = buy.can_afford(tabletop.players[current_player], card)
+    new_player_bank = Bank.pay_gems(
+        player.bank,
+        Player.get_bonus(player),
+        card.cost)
 
-    if new_player:
+    if Bank.is_solvent(new_player_bank):
         # Remove the card from the deck
-        new_decks = m.remove_card_from_deck(tabletop.decks, tier, card_i)
-
-        # Add the card to their purchased
-        new_player = m.player_purchase_card(new_player, card)
-
-        return tabletop._replace(
-            decks=new_decks,
-            players=m.update_players(tabletop, current_player, new_player))
+        return Tabletop.remove_card_from_deck(
+            # Replace the player (with updated)
+            Tabletop.replace_player(
+                tabletop,
+                player_i,
+                # Charge the cost to the player's bank
+                Player.replace_bank(
+                    # Add the card to their purchased
+                    Player.add_card_to_purchased(player, card),
+                    new_player_bank)),
+            tier,
+            card_i)
     else:
         return None
 
 class ValidPlayerActions(Enum):
-    PICK_DSE = (pick_gems, (d.Gems(diamond=1, sapphire=1, emerald=1),))
-    PICK_DSR = (pick_gems, (d.Gems(diamond=1, sapphire=1, ruby=1),))
-    PICK_DSO = (pick_gems, (d.Gems(diamond=1, sapphire=1, onyx=1),))
-    PICK_DER = (pick_gems, (d.Gems(diamond=1, emerald=1, ruby=1),))
-    PICK_DEO = (pick_gems, (d.Gems(diamond=1, emerald=1, onyx=1),))
-    PICK_DRO = (pick_gems, (d.Gems(diamond=1, ruby=1, onyx=1),))
-    PICK_SER = (pick_gems, (d.Gems(sapphire=1, emerald=1, ruby=1),))
-    PICK_SEO = (pick_gems, (d.Gems(sapphire=1, emerald=1, onyx=1),))
-    PICK_SRO = (pick_gems, (d.Gems(sapphire=1, ruby=1, onyx=1),))
-    PICK_ERO = (pick_gems, (d.Gems(emerald=1, ruby=1, onyx=1),))
-    PICK_DD = (pick_gems, (d.Gems(diamond=2),))
-    PICK_SS = (pick_gems, (d.Gems(sapphire=2),))
-    PICK_EE = (pick_gems, (d.Gems(emerald=2),))
-    PICK_RR = (pick_gems, (d.Gems(ruby=2),))
-    PICK_OO = (pick_gems, (d.Gems(onyx=2),))
+    PICK_DSE = (pick_gems, (Gems(diamond=1, sapphire=1, emerald=1),))
+    PICK_DSR = (pick_gems, (Gems(diamond=1, sapphire=1, ruby=1),))
+    PICK_DSO = (pick_gems, (Gems(diamond=1, sapphire=1, onyx=1),))
+    PICK_DER = (pick_gems, (Gems(diamond=1, emerald=1, ruby=1),))
+    PICK_DEO = (pick_gems, (Gems(diamond=1, emerald=1, onyx=1),))
+    PICK_DRO = (pick_gems, (Gems(diamond=1, ruby=1, onyx=1),))
+    PICK_SER = (pick_gems, (Gems(sapphire=1, emerald=1, ruby=1),))
+    PICK_SEO = (pick_gems, (Gems(sapphire=1, emerald=1, onyx=1),))
+    PICK_SRO = (pick_gems, (Gems(sapphire=1, ruby=1, onyx=1),))
+    PICK_ERO = (pick_gems, (Gems(emerald=1, ruby=1, onyx=1),))
+    PICK_DD = (pick_gems, (Gems(diamond=2),))
+    PICK_SS = (pick_gems, (Gems(sapphire=2),))
+    PICK_EE = (pick_gems, (Gems(emerald=2),))
+    PICK_RR = (pick_gems, (Gems(ruby=2),))
+    PICK_OO = (pick_gems, (Gems(onyx=2),))
 
     BUY_TIER_0_0 = (buy_card, (0, 0))
     BUY_TIER_0_1 = (buy_card, (0, 1))

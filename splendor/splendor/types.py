@@ -1,8 +1,104 @@
 import random
+from typing import NamedTuple
 
-from splendor.data import (DIAMOND, EMERALD, ONYX, RUBY, SAPPHIRE, Card, Gems,
-                           Noble)
 
+class Gems(NamedTuple):
+    diamond: float = 0.0
+    sapphire: float = 0.0
+    emerald: float = 0.0
+    ruby: float = 0.0
+    onyx: float = 0.0
+
+    @staticmethod
+    def subtract(g1, g2, allow_negative=True):
+        if allow_negative:
+            return Gems(*[g1[i] - g2[i] for i in range(len(Gems()))])
+        else:
+            return Gems(*[max(0, g1[i] - g2[i]) for i in range(len(Gems()))])
+
+    @staticmethod
+    def add(g1, g2, allow_negative=True):
+        return Gems(*[g1[i] + g2[i] for i in range(len(Gems()))])
+
+class Bank(NamedTuple):
+    diamond: int = 0
+    sapphire: int = 0
+    emerald: int = 0
+    ruby: int = 0
+    onyx: int = 0
+    gold: int = 0
+
+    @staticmethod
+    def is_solvent(bank):
+        return all([v >= 0 for v in bank])
+
+    @staticmethod
+    def pay_gems(bank, bonus, gems, allow_gold=True):
+        new_bank = Bank.subtract_gems(
+            bank,
+            # Discount from bonus (cost of a card after bonus can't go negative, so max to 0)
+            Gems.subtract(
+                gems,
+                bonus or Gems(),
+                allow_negative=False),
+            allow_negative=True)
+
+        if allow_gold:
+            return Bank(
+                # Assuming all debts are covered, we max(0,...)  the error will play out in gold < > 0
+                # Order of Bank and Gems is ==
+                *[max(0, new_bank[i]) for i in range(len(Gems()))],
+                # Gold remaining is previous + any deficit spending we did.
+                gold=new_bank.gold + sum([new_bank[i] for i in range(len(Gems())) if new_bank[i] < 0]))
+
+        else:
+            return new_bank
+
+    @staticmethod
+    def add_gems(bank, g1, **kwargs):
+        # This is ok b/c of order of things (and FAST)
+        return Bank(*Gems.add(bank, g1, **kwargs))
+
+    @staticmethod
+    def subtract_gems(bank, g1, **kwargs):
+        # This is ok b/c of order of things (and FAST)
+        return Bank(*Gems.subtract(bank, g1, **kwargs), gold=bank.gold)
+
+EMERALD = Gems(emerald=1.0)
+SAPPHIRE = Gems(sapphire=1.0)
+RUBY = Gems(ruby=1.0)
+DIAMOND = Gems(diamond=1.0)
+ONYX = Gems(onyx=1.0)
+
+class Card(NamedTuple):
+    cost: Gems = Gems()
+    points: float = 0
+    bonus: Gems = Gems()
+
+class Noble(NamedTuple):
+    points: float
+    cost: Gems
+
+class Player(NamedTuple):
+    reserved: tuple = ()
+    nobles: tuple = ()
+    purchased: tuple = ()
+
+    # How many gems do you have
+    bank: Bank = Bank()
+
+    @staticmethod
+    def update_bank(player, bank):
+        return player._replace(bank=bank)
+
+    @staticmethod
+    def get_bonus(player):
+        return Gems(*[sum([card.bonus[i] for card in player.purchased]) for i in range(len(Gems()))])
+
+    @staticmethod
+    def add_card_to_purchased(player, card):
+        return player._replace(
+            purchased=([card] + player.purchased))
 
 def tier_0_deck(seed=None):
     all_cards = (
@@ -130,3 +226,55 @@ def nobles_deck(seed=None):
         Noble(points=3, cost=Gems(diamond=3, sapphire=0, emerald=0, ruby=3, onyx=3)))
 
     return random.Random(seed).sample(all_cards, len(all_cards))
+
+class Tabletop(NamedTuple):
+    noble_deck: tuple
+    decks: tuple
+
+    bank: Bank
+    players: tuple
+    turn: int = 0
+
+    @staticmethod
+    def replace_player(tabletop, player_i, player):
+        new_players = (
+            tabletop.players[0:player_i] +
+            (player,) +
+            tabletop.players[player_i + 1:])
+        return tabletop._replace(players=new_players)
+
+    @staticmethod
+    def remove_card_from_deck(tabletop, tier, card_i):
+        new_deck = (
+            tabletop.decks[tier][0:card_i] +
+            tabletop.decks[tier][card_i + 1:])
+
+        new_decks = (
+            tabletop.decks[0:tier] +
+            (new_deck, ) +
+            tabletop.decks[tier + 1:])
+
+        return tabletop._replace(decks=new_decks)
+
+    @staticmethod
+    def setup_game(seed=0, players=4):
+        gem_count = 7
+        if players == 3:
+            gem_count = 5
+        elif players == 2:
+            gem_count = 4
+
+        return Tabletop(
+            noble_deck=nobles_deck(seed=seed),
+            decks=(
+                tier_0_deck(seed=seed),
+                tier_1_deck(seed=seed),
+                tier_2_deck(seed=seed)),
+            bank=Bank(
+                gold=5,
+                diamond=gem_count,
+                sapphire=gem_count,
+                emerald=gem_count,
+                ruby=gem_count,
+                onyx=gem_count),
+            players=(Player(),) * players)
