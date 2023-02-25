@@ -5,6 +5,7 @@ setup(
     name='splendor',
     description='splendor core code',
     packages=[
+        'py_cui'
     ],
     install_requires=[
     ],

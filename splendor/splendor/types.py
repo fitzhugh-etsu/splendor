@@ -65,6 +65,11 @@ class Bank(NamedTuple):
             return new_bank
 
     @staticmethod
+    def receive_bank(b1, b2, **kwargs):
+        # This is ok b/c of order of things (and FAST)
+        return Bank(*Gems.add(b1, b2), gold=b1.gold + b2.gold)
+
+    @staticmethod
     def add_gems(bank, g1, **kwargs):
         # This is ok b/c of order of things (and FAST)
         return Bank(*Gems.add(bank, g1, **kwargs))
@@ -90,6 +95,26 @@ class Noble(NamedTuple):
     points: float
     cost: Gems
 
+    @staticmethod
+    def number_visible(players):
+        player_count = len(players)
+        if player_count >= 4:
+            return 5
+        elif player_count == 3:
+            return 4
+        else:
+            return 3
+
+    @staticmethod
+    def would_visit(noble, player):
+        # Gives the "BONUS" scores for all purchased cards
+        player_bonus = Player.get_bonus(player)
+
+        # Would this noble visit this player?
+        # BONUS from the card (which is it?)
+        if all([noble.cost[i] <= player_bonus[i] for i in range(len(Gems()))]):
+            return True
+
 class Player(NamedTuple):
 
     reserved: tuple = ()
@@ -108,9 +133,15 @@ class Player(NamedTuple):
         return Gems(*[sum([card.bonus[i] for card in player.purchased]) for i in range(len(Gems()))])
 
     @staticmethod
-    def add_card_to_purchased(player, card):
+    def add_noble(player, noble):
         return player._replace(
-            purchased=((card,) + player.purchased))
+            nobles=((noble,) + player.nobles))
+
+    @staticmethod
+    def add_card_to_purchased(player, card):
+        # Make sure it isn't hidden anymore!
+        return player._replace(
+            purchased=((card._replace(hidden=False),) + player.purchased))
 
     @staticmethod
     def add_card_to_reserved(player, card):
@@ -120,6 +151,19 @@ class Player(NamedTuple):
     @staticmethod
     def can_reserve_card(player):
         return len(player.reserved) < d.MAX_PLAYER_RESERVATIONS
+
+    @staticmethod
+    def get_reserved(player, reserved_i):
+        try:
+            return player.reserved[reserved_i]
+        except IndexError:
+            return None
+
+    @staticmethod
+    def remove_card_from_reserved(player, reserved_i):
+        return player._replace(
+            reserved=(player.reserved[0:reserved_i] + player.reserved[reserved_i + 1:]))
+
 
 def tier_0_deck(seed=None):
     all_cards = (
@@ -249,7 +293,7 @@ def nobles_deck(seed=None):
     return random.Random(seed).sample(all_cards, len(all_cards))
 
 class Tabletop(NamedTuple):
-    noble_deck: tuple
+    nobles_deck: tuple
     decks: tuple
 
     bank: Bank
@@ -257,12 +301,18 @@ class Tabletop(NamedTuple):
     turn: int = 0
 
     @staticmethod
-    def replace_player(tabletop, player_i, player):
+    def replace_player(tabletop, player_i: int, player: Player):
         new_players = (
             tabletop.players[0:player_i] +
             (player,) +
             tabletop.players[player_i + 1:])
         return tabletop._replace(players=new_players)
+
+    @staticmethod
+    def remove_noble_from_deck(tabletop, noble_i: int):
+        return tabletop._replace(
+            nobles_deck=(tabletop.nobles_deck[0:noble_i] +
+                         tabletop.nobles_deck[noble_i + 1:]))
 
     @staticmethod
     def remove_card_from_deck(tabletop, tier, card_i):
@@ -293,7 +343,7 @@ class Tabletop(NamedTuple):
             gem_count = 4
 
         return Tabletop(
-            noble_deck=nobles_deck(seed=seed),
+            nobles_deck=nobles_deck(seed=seed),
             decks=(
                 tier_0_deck(seed=seed),
                 tier_1_deck(seed=seed),

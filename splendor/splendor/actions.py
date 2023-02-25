@@ -1,7 +1,7 @@
 from enum import Enum
 
 import splendor.defs as d
-from splendor.types import Bank, Gems, Player, Tabletop
+from splendor.types import Bank, Gems, Noble, Player, Tabletop
 
 
 def _get_player(tabletop):
@@ -15,20 +15,20 @@ def pick_gems(tabletop, gems):
 
     # Are you pickup too many?
     if sum(gems) > d.BANK_TOTAL_GEM_PICKUP_AMOUNT:
-        return False
+        return None
 
     # You can't pickup multiples when the threshold for that gem type is too low
     if any([True for i in range(len(Gems()))
-            if gems[i] > 1 and tabletop.bank[i] <= d.BANK_THRESHOLD_FOR_DOUBLE_GEMS]):
-        return False
+            if gems[i] > 1 and tabletop.bank[i] < d.BANK_THRESHOLD_FOR_DOUBLE_GEMS]):
+        return None
 
     # You can't pick up multiple > 1 gems
     if len([gems[i] for i in range(len(Gems())) if (gems[i] > 1)]) > 1:
-        return False
+        return None
 
     # Does the tabletop bank stay solvent?
-    new_bank = Bank.subtract_gems(tabletop.bank, gems)
-    if Bank.is_solvent(new_bank):
+    new_table_bank = Bank.subtract_gems(tabletop.bank, gems)
+    if Bank.is_solvent(new_table_bank):
         # Add to the player's bank
         new_player_bank = Bank.add_gems(
             tabletop.players[player_i].bank,
@@ -36,11 +36,11 @@ def pick_gems(tabletop, gems):
 
         new_player = player._replace(bank=new_player_bank)
 
-        new_players = Tabletop.replace_player(tabletop, player_i, new_player)
-
-        return tabletop._replace(
-            bank=new_bank,
-            players=new_players)
+        return Tabletop.replace_player(
+            tabletop,
+            player_i,
+            new_player)._replace(
+                bank=new_table_bank)
 
     return None
 
@@ -71,11 +71,9 @@ def reserve_card(tabletop, tier, card_i=None):
                 new_tabletop = new_tabletop._replace(bank=new_table_bank)
                 # Player bank was added gold
                 new_player = new_player._replace(
-                        bank=Bank.add_gold(
-                            new_player.bank,
-                            gold=d.GOLD_RESERVATION_AMOUNT))
-
-
+                    bank=Bank.add_gold(
+                        new_player.bank,
+                        gold=d.GOLD_RESERVATION_AMOUNT))
             else:
                 # Table bank didn't change
                 # Player gold didn't change
@@ -88,6 +86,42 @@ def reserve_card(tabletop, tier, card_i=None):
                 player_i,
                 new_player)
     return None
+
+def buy_reserved(tabletop, reserved_i):
+    player_i, player = _get_player(tabletop)
+
+    # Is reserved card existent?
+    if (card := Player.get_reserved(player, reserved_i)):
+        # The card exists!
+
+        # Can player afford this card?
+        new_player_bank = Bank.pay_gems(
+            player.bank,
+            Player.get_bonus(player),
+            card.cost)
+
+        if Bank.is_solvent(new_player_bank):
+            # Add things back to table bank
+            new_table_bank = Bank.receive_gems(
+                player.bank,
+                Bank.difference(
+                    player.bank,
+                    new_player_bank))
+
+            # Update the whole tabletop
+            return Tabletop.replace_player(
+                tabletop._replace(
+                    # Add the new bank in
+                    bank=new_table_bank),
+                player_i,
+                # Charge the cost to the player's bank
+                Player.update_bank(
+                    # Remove card from reserved
+                    Player.remove_card_from_reserved(
+                        # Add card to purchased
+                        Player.add_card_to_purchased(player, card),
+                        reserved_i),
+                    new_player_bank))
 
 def buy_card(tabletop, tier, card_i):
     player_i, player = _get_player(tabletop)
@@ -108,14 +142,14 @@ def buy_card(tabletop, tier, card_i):
                 tabletop,
                 player_i,
                 # Charge the cost to the player's bank
-                Player.replace_bank(
+                Player.update_bank(
                     # Add the card to their purchased
                     Player.add_card_to_purchased(player, card),
                     new_player_bank)),
             tier,
             card_i)
-    else:
-        return None
+
+    return None
 
 class ValidPlayerActions(Enum):
     PICK_DSE = (pick_gems, (Gems(diamond=1, sapphire=1, emerald=1),))
@@ -147,6 +181,11 @@ class ValidPlayerActions(Enum):
     BUY_TIER_2_2 = (buy_card, (0, 1))
     BUY_TIER_2_3 = (buy_card, (0, 1))
 
+    # Buy your reserved files for a turn
+    BUY_RESERVED_0 = (buy_reserved, (0, ))
+    BUY_RESERVED_1 = (buy_reserved, (1, ))
+    BUY_RESERVED_2 = (buy_reserved, (2, ))
+
     # Reserve TIER
     RESERVE_TIER_0 = (reserve_card, (0,))
     RESERVE_TIER_0_0 = (reserve_card, (0, 0))
@@ -168,7 +207,39 @@ class ValidPlayerActions(Enum):
     RESERVE_TIER_2_2 = (reserve_card, (2, 2))
     RESERVE_TIER_2_3 = (reserve_card, (2, 3))
 
+def apply_action(tabletop, action):
+    new_tabletop = action.value[0](tabletop, *action.value[1])
+    if new_tabletop:
+        return new_tabletop._replace(turn=tabletop.turn + 1)
+    else:
+        return None
+
 def valid_actions(tabletop):
     for action in ValidPlayerActions:
-        if action.value[0](tabletop, *action.value[1]):
+        new_tabletop = action.value[0](tabletop, *action.value[1])
+        if new_tabletop:
             yield action
+
+def visiting_nobles_for_last_player(tabletop):
+    # Look at the *previous* player's turn for nobles visiting
+    player_i = (tabletop.turn - 1) % len(tabletop.players)
+    player = tabletop.players[player_i]
+
+    return tuple([(i, noble)
+                  for (i, noble) in
+                  enumerate(tabletop.nobles_deck[0:Noble.number_visible(tabletop.players)])
+                  if Noble.would_visit(noble, player)])
+
+def accept_noble(tabletop, noble_i):
+    player_i = (tabletop.turn - 1) % len(tabletop.players)
+    player = tabletop.players[player_i]
+
+    noble = tabletop.nobles_deck[noble_i]
+
+    return Tabletop.replace_player(
+        # Remove noble from the tabletop
+        Tabletop.remove_noble_from_deck(tabletop, noble_i),
+        # Player to replace (i)
+        player_i,
+        # Add noble to player
+        Player.add_noble(player, noble))
