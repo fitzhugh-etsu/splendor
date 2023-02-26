@@ -1,7 +1,7 @@
 import unittest
 
 import splendor.actions as actions
-from splendor.actions import ValidPlayerActions
+from splendor.actions import ValidPlayerActions, ValidGemPaybackActions
 from splendor.types import Bank, Card, Gems, Player, Tabletop
 
 
@@ -231,15 +231,16 @@ class TestActions(unittest.TestCase):
 
         tabletop = actions.apply_action(tabletop, ValidPlayerActions.BUY_RESERVED_0)
         self.assertEqual(7, tabletop.turn)
-        # Should have returned the tokens??
+
+        # Should have returned the tkens??
         # Step through
         self.assertEqual(
             Bank(diamond=4.0,
-                sapphire=2.0,
+                sapphire=3.0,
                 emerald=4.0,
                 ruby=4.0,
                 onyx=2.0,
-                gold=1),
+                gold=3),
             tabletop.bank)
         self.assertEqual(36, len(tabletop.decks[0]))
         self.assertEqual(1, len(tabletop.players[0].reserved))
@@ -286,8 +287,63 @@ class TestActions(unittest.TestCase):
         visiting_nobles = actions.visiting_nobles_for_last_player(tabletop)
         self.assertEqual(((0, tabletop.nobles_deck[0]),), visiting_nobles)
 
-        tabletop = actions.accept_noble(tabletop, 0)
+        tabletop = actions.accept_noble_for_last_player(tabletop, 0)
 
         # don't change the turn
         self.assertEqual(1, tabletop.turn)
         self.assertEqual(tuple([n[1] for n in visiting_nobles]), tabletop.players[0].nobles)
+
+    def test_returning_gems(self):
+        tabletop = Tabletop.setup_game(seed=1, players=2)
+        self.assertEqual(0, tabletop.turn)
+        self.assertEqual(
+            tuple(),
+            tuple(list(actions.valid_payback_actions_for_last_player(tabletop))))
+
+        self.assertEqual(
+            (ValidGemPaybackActions.RETURN_E,),
+            tuple(list(actions.valid_payback_actions_for_last_player(
+                tabletop._replace(
+                    players=(Player(
+                        bank=Bank(
+                            emerald=11, )),))))))
+
+        self.assertEqual(
+            (ValidGemPaybackActions.RETURN_D,),
+            tuple(list(actions.valid_payback_actions_for_last_player(
+                tabletop._replace(
+                    players=(Player(
+                        bank=Bank(
+                            diamond=11)),))))))
+
+        self.assertEqual(
+            (ValidGemPaybackActions.RETURN_S,),
+            tuple(list(actions.valid_payback_actions_for_last_player(
+                tabletop._replace(
+                    players=(Player(
+                        bank=Bank(
+                            sapphire=11)),))))))
+        
+        self.assertEqual(
+            (ValidGemPaybackActions.RETURN_R,),
+            tuple(list(actions.valid_payback_actions_for_last_player(
+                tabletop._replace(
+                    players=(Player(
+                        bank=Bank(
+                            ruby=11)),))))))
+
+        self.assertEqual(
+            (ValidGemPaybackActions.RETURN_O,),
+            tuple(list(actions.valid_payback_actions_for_last_player(
+                tabletop._replace(
+                    players=(Player(
+                        bank=Bank(
+                            onyx=11)),))))))
+
+        self.assertEqual(
+            (ValidGemPaybackActions.RETURN_G,),
+            tuple(list(actions.valid_payback_actions_for_last_player(
+                tabletop._replace(
+                    players=(Player(
+                        bank=Bank(
+                            gold=11)),))))))

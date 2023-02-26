@@ -103,7 +103,7 @@ def buy_reserved(tabletop, reserved_i):
         if Bank.is_solvent(new_player_bank):
             # Add things back to table bank
             new_table_bank = Bank.receive_bank(
-                player.bank,
+                tabletop.bank,
                 Bank.difference(
                     player.bank,
                     new_player_bank))
@@ -137,7 +137,7 @@ def buy_card(tabletop, tier, card_i):
     if Bank.is_solvent(new_player_bank):
         # Add things back to table bank
         new_table_bank = Bank.receive_bank(
-            player.bank,
+            tabletop.bank,
             Bank.difference(
                 player.bank,
                 new_player_bank))
@@ -159,6 +159,63 @@ def buy_card(tabletop, tier, card_i):
             card_i)
 
     return None
+
+def return_gold(tabletop, gold_number):
+    player_i = (tabletop.turn - 1) % len(tabletop.players)
+    player = tabletop.players[player_i]
+    if sum(player.bank) > d.MAX_PLAYER_TOKENS:
+        new_player_bank = player.bank._replace(gold=player.bank.gold - gold_number)
+        if Bank.is_solvent(new_player_bank):
+            new_table_bank = tabletop.bank._replace(
+                gold=tabletop.bank.gold + gold_number)
+
+            return Tabletop.replace_player(
+                tabletop._replace(
+                    # Add the new bank in
+                    bank=new_table_bank),
+                player_i,
+                # Charge the cost to the player's bank
+                Player.update_bank(
+                    # Add the card to their purchased
+                    player,
+                    new_player_bank)),
+
+    
+
+def return_gem(tabletop, gems):
+    player_i = (tabletop.turn - 1) % len(tabletop.players)
+    player = tabletop.players[player_i]
+    
+    if sum(player.bank) > d.MAX_PLAYER_TOKENS:
+        new_player_bank = Bank.pay_gems(
+            player.bank,
+            None,
+            gems,
+            # Don't allow us to pay with gold to cover this cost
+            allow_gold=False)
+        if Bank.is_solvent(new_player_bank):
+            new_table_bank = Bank.receive_bank(
+                tabletop.bank,
+                Bank(*gems))
+
+            return Tabletop.replace_player(
+                tabletop._replace(
+                    # Add the new bank in
+                    bank=new_table_bank),
+                player_i,
+                # Charge the cost to the player's bank
+                Player.update_bank(
+                    # Add the card to their purchased
+                    player,
+                    new_player_bank)),
+
+class ValidGemPaybackActions(Enum):
+    RETURN_D = (return_gem, (Gems(diamond=1),))
+    RETURN_E = (return_gem, (Gems(emerald=1),))
+    RETURN_S = (return_gem, (Gems(sapphire=1),))
+    RETURN_R = (return_gem, (Gems(ruby=1),))
+    RETURN_O = (return_gem, (Gems(onyx=1),))
+    RETURN_G = (return_gold,(1, ))
 
 class ValidPlayerActions(Enum):
     PICK_DSE = (pick_gems, (Gems(diamond=1, sapphire=1, emerald=1),))
@@ -229,6 +286,19 @@ def valid_actions(tabletop):
         if new_tabletop:
             yield action
 
+def valid_payback_actions_for_last_player(tabletop):
+    for action in ValidGemPaybackActions:
+        new_tabletop = action.value[0](tabletop, *action.value[1])
+        if new_tabletop:
+            yield action
+
+def apply_payback_action_for_last_player(tabletop, action):
+    new_tabletop = action.value[0](tabletop, *action.value[1])
+    if new_tabletop:
+        return new_tabletop
+    else:
+        return None
+
 def visiting_nobles_for_last_player(tabletop):
     # Look at the *previous* player's turn for nobles visiting
     player_i = (tabletop.turn - 1) % len(tabletop.players)
@@ -239,7 +309,7 @@ def visiting_nobles_for_last_player(tabletop):
                   enumerate(tabletop.nobles_deck[0:Noble.number_visible(tabletop.players)])
                   if Noble.would_visit(noble, player)])
 
-def accept_noble(tabletop, noble_i):
+def accept_noble_for_last_player(tabletop, noble_i):
     player_i = (tabletop.turn - 1) % len(tabletop.players)
     player = tabletop.players[player_i]
 
