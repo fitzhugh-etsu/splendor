@@ -215,6 +215,14 @@ class TestActions(unittest.TestCase):
         self.assertEqual(Bank(sapphire=2, gold=2), tabletop.players[0].bank)
         self.assertEqual(Bank(onyx=2, gold=2), tabletop.players[1].bank)
 
+        self.assertEqual(
+            Bank(diamond=4.0, 
+                sapphire=2.0, 
+                emerald=4.0, 
+                ruby=4.0, 
+                onyx=2.0, 
+                gold=1),
+            tabletop.bank)
         # Player 0 turn can now buy RESERVED_0 and _1
         self.assertTrue(
             ValidPlayerActions.BUY_RESERVED_1 in actions.valid_actions(tabletop))
@@ -223,6 +231,16 @@ class TestActions(unittest.TestCase):
 
         tabletop = actions.apply_action(tabletop, ValidPlayerActions.BUY_RESERVED_0)
         self.assertEqual(7, tabletop.turn)
+        # Should have returned the tokens??
+        # Step through
+        self.assertEqual(
+            Bank(diamond=4.0,
+                sapphire=2.0,
+                emerald=4.0,
+                ruby=4.0,
+                onyx=2.0,
+                gold=1),
+            tabletop.bank)
         self.assertEqual(36, len(tabletop.decks[0]))
         self.assertEqual(1, len(tabletop.players[0].reserved))
         self.assertEqual(2, len(tabletop.players[1].reserved))

@@ -31,6 +31,10 @@ class Bank(NamedTuple):
     gold: int = 0
 
     @staticmethod
+    def difference(b1, b2):
+        return Bank(*[b1[i] - b2[i] for i in range(len(Bank()))])
+
+    @staticmethod
     def is_solvent(bank):
         return all([v >= 0 for v in bank])
 
@@ -72,7 +76,7 @@ class Bank(NamedTuple):
     @staticmethod
     def add_gems(bank, g1, **kwargs):
         # This is ok b/c of order of things (and FAST)
-        return Bank(*Gems.add(bank, g1, **kwargs))
+        return Bank(*Gems.add(bank, g1, **kwargs), gold=bank.gold)
 
     @staticmethod
     def subtract_gems(bank, g1, **kwargs):

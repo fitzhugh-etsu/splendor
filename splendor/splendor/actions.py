@@ -102,7 +102,7 @@ def buy_reserved(tabletop, reserved_i):
 
         if Bank.is_solvent(new_player_bank):
             # Add things back to table bank
-            new_table_bank = Bank.receive_gems(
+            new_table_bank = Bank.receive_bank(
                 player.bank,
                 Bank.difference(
                     player.bank,
@@ -135,11 +135,20 @@ def buy_card(tabletop, tier, card_i):
         card.cost)
 
     if Bank.is_solvent(new_player_bank):
+        # Add things back to table bank
+        new_table_bank = Bank.receive_bank(
+            player.bank,
+            Bank.difference(
+                player.bank,
+                new_player_bank))
+
         # Remove the card from the deck
         return Tabletop.remove_card_from_deck(
             # Replace the player (with updated)
             Tabletop.replace_player(
-                tabletop,
+                tabletop._replace(
+                    # Add the new bank in
+                    bank=new_table_bank),
                 player_i,
                 # Charge the cost to the player's bank
                 Player.update_bank(
