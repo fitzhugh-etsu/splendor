@@ -7,7 +7,8 @@ setup(
     packages=[
     ],
     install_requires=[
-        'py_cui'
+        'py_cui',
+        'termcolor'
     ],
     dependency_links=[
     ],
