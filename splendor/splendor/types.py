@@ -129,6 +129,15 @@ class Player(NamedTuple):
     bank: Bank = Bank()
 
     @staticmethod
+    def is_turn(tabletop, player_i):
+        return (tabletop.turn % len(tabletop.players)) == player_i
+
+    @staticmethod
+    def points(player):
+        return sum([n.points for n in player.nobles]) + \
+            sum([c.points for c in player.purchased])
+
+    @staticmethod
     def update_bank(player, bank):
         return player._replace(bank=bank)
 

@@ -8,7 +8,8 @@ setup(
     ],
     install_requires=[
         'py_cui',
-        'termcolor'
+        'termcolor',
+        'dotted-dict'
     ],
     dependency_links=[
     ],
