@@ -174,9 +174,9 @@ def setup_ui(root, update_fn):
                     bonus=bonus_widgets(root, 1, 6),
                     reserved=reserved_widgets(root, 2, 6)),
                 dict(
-                    bank=bank_widgets(root, "P 1", 4, 6),
-                    bonus=bonus_widgets(root, 5, 6),
-                    reserved=reserved_widgets(root, 6, 6)),
+                    bank=bank_widgets(root, "P 1", 5, 6),
+                    bonus=bonus_widgets(root, 6, 6),
+                    reserved=reserved_widgets(root, 7, 6)),
                 dict(
                     bank=bank_widgets(root, "P 2", 10, 6),
                     bonus=bonus_widgets(root, 11, 6),
@@ -195,9 +195,9 @@ def setup_ui(root, update_fn):
 
 
     def perform_action(widget):
-        action = ValidPlayerActions[widget.get()]
+        action = widget.get()
 
-        set_current_tabletop(actions.apply_action(get_current_tabletop(), action))
+        set_current_tabletop(actions.apply_game_actions(get_current_tabletop(), action))
 
         update_fn(widgets, get_current_tabletop())
 
@@ -356,11 +356,12 @@ def update_tier(tier, cards):
 
 def update_ui(widgets, tabletop):
     widgets.command_selection.clear()
-    widgets.command_selection.add_item_list([a.name for a in actions.valid_actions(tabletop)])
+    turn_completed, actions_list = actions.next_game_actions(tabletop)
+    widgets.command_selection.add_item_list(actions_list)
 
 
     for (i, player) in enumerate(tabletop.players):
-        if Player.is_turn(tabletop, i):
+        if (turn_completed and Player.is_turn(tabletop, i)) or (not turn_completed and Player.is_turn(tabletop, i + 1)):
             widgets.players[i].bank.label.set_color(py_cui.BLACK_ON_WHITE)
         else:
             widgets.players[i].bank.label.set_color(py_cui.WHITE_ON_BLACK)

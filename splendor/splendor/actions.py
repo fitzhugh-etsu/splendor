@@ -180,8 +180,6 @@ def return_gold(tabletop, gold_number):
                     player,
                     new_player_bank)),
 
-    
-
 def return_gem(tabletop, gems):
     player_i = (tabletop.turn - 1) % len(tabletop.players)
     player = tabletop.players[player_i]
@@ -207,7 +205,30 @@ def return_gem(tabletop, gems):
                 Player.update_bank(
                     # Add the card to their purchased
                     player,
-                    new_player_bank)),
+                    new_player_bank))
+
+def accept_noble(tabletop, noble_i):
+    player_i = (tabletop.turn - 1) % len(tabletop.players)
+    player = tabletop.players[player_i]
+    if noble_i < Noble.number_visible(tabletop.players):
+        noble = tabletop.nobles_deck[noble_i]
+        if Noble.would_visit(noble, player):
+            return Tabletop.replace_player(
+                # Remove noble from the tabletop
+                Tabletop.remove_noble_from_deck(tabletop, noble_i),
+                # Player to replace (i)
+                player_i,
+                # Add noble to player
+                Player.add_noble(player, noble))
+    else:
+        return None
+
+class ValidNobleActions(Enum):
+    NOBLE_0 = (accept_noble, (0, ))
+    NOBLE_1 = (accept_noble, (1, ))
+    NOBLE_2 = (accept_noble, (2, ))
+    NOBLE_3 = (accept_noble, (3, ))
+    NOBLE_4 = (accept_noble, (4, ))
 
 class ValidGemPaybackActions(Enum):
     RETURN_D = (return_gem, (Gems(diamond=1),))
@@ -299,26 +320,38 @@ def apply_payback_action_for_last_player(tabletop, action):
     else:
         return None
 
-def visiting_nobles_for_last_player(tabletop):
-    # Look at the *previous* player's turn for nobles visiting
-    player_i = (tabletop.turn - 1) % len(tabletop.players)
-    player = tabletop.players[player_i]
+def valid_nobles_for_last_player(tabletop):
+    for action in ValidNobleActions:
+        new_tabletop = action.value[0](tabletop, *action.value[1])
+        if new_tabletop:
+            yield action
 
-    return tuple([(i, noble)
-                  for (i, noble) in
-                  enumerate(tabletop.nobles_deck[0:Noble.number_visible(tabletop.players)])
-                  if Noble.would_visit(noble, player)])
+def apply_noble_for_last_player(tabletop, action):
+    new_tabletop = action.value[0](tabletop, *action.value[1])
+    if new_tabletop:
+        return new_tabletop
+    else:
+        return None
 
-def accept_noble_for_last_player(tabletop, noble_i):
-    player_i = (tabletop.turn - 1) % len(tabletop.players)
-    player = tabletop.players[player_i]
+def next_game_actions(tabletop):
+    # If there are > 10 we need to give some gems back
+    if (actions := list(valid_payback_actions_for_last_player(tabletop))):
+        return (False, actions)
+    # If there are nobles, we need to accept some
+    if (actions := list(valid_nobles_for_last_player(tabletop))):
+        return (False, actions)
 
-    noble = tabletop.nobles_deck[noble_i]
+    # Otherwise 
+    return (True, list(valid_actions(tabletop)))
 
-    return Tabletop.replace_player(
-        # Remove noble from the tabletop
-        Tabletop.remove_noble_from_deck(tabletop, noble_i),
-        # Player to replace (i)
-        player_i,
-        # Add noble to player
-        Player.add_noble(player, noble))
+def apply_game_actions(tabletop, action):
+    if isinstance(action, ValidGemPaybackActions):
+        return apply_payback_action_for_last_player(tabletop, action)
+
+    elif isinstance(action, ValidNobleActions):
+        return apply_nobles_for_last_player(tabletop, action)
+
+    elif isinstance(action, ValidPlayerActions):
+        return apply_action(tabletop, action)
+
+    raise Exception("What?", action)
