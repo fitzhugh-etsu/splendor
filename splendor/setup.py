@@ -9,7 +9,8 @@ setup(
     install_requires=[
         'py_cui',
         'termcolor',
-        'dotted-dict'
+        'dotted-dict',
+        'lmdb'
     ],
     dependency_links=[
     ],

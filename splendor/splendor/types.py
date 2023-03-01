@@ -93,7 +93,7 @@ class Card(NamedTuple):
     cost: Gems = Gems()
     points: float = 0
     bonus: Gems = Gems()
-    hidden: bool = True
+    hidden: bool = False
 
 class Noble(NamedTuple):
     points: float
@@ -129,6 +129,10 @@ class Player(NamedTuple):
     bank: Bank = Bank()
 
     @staticmethod
+    def won(player):
+        return Player.points(player) >= d.POINTS_FOR_WIN
+
+    @staticmethod
     def is_turn(tabletop, player_i):
         return (tabletop.turn % len(tabletop.players)) == player_i
 
@@ -159,7 +163,7 @@ class Player(NamedTuple):
     @staticmethod
     def add_card_to_reserved(player, card):
         return player._replace(
-            reserved=((card,) + player.reserved))
+            reserved=((card._replace(hidden=True),) + player.reserved))
 
     @staticmethod
     def can_reserve_card(player):

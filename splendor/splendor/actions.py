@@ -125,6 +125,9 @@ def buy_reserved(tabletop, reserved_i):
 
 def buy_card(tabletop, tier, card_i):
     player_i, player = _get_player(tabletop)
+    # Not enough cacrds!
+    if len(tabletop.decks[tier]) <= card_i:
+        return None
 
     card = tabletop.decks[tier][card_i]
 
@@ -211,15 +214,18 @@ def accept_noble(tabletop, noble_i):
     player_i = (tabletop.turn - 1) % len(tabletop.players)
     player = tabletop.players[player_i]
     if noble_i < Noble.number_visible(tabletop.players):
-        noble = tabletop.nobles_deck[noble_i]
-        if Noble.would_visit(noble, player):
-            return Tabletop.replace_player(
-                # Remove noble from the tabletop
-                Tabletop.remove_noble_from_deck(tabletop, noble_i),
-                # Player to replace (i)
-                player_i,
-                # Add noble to player
-                Player.add_noble(player, noble))
+        try:
+            noble = tabletop.nobles_deck[noble_i]
+            if Noble.would_visit(noble, player):
+                return Tabletop.replace_player(
+                    # Remove noble from the tabletop
+                    Tabletop.remove_noble_from_deck(tabletop, noble_i),
+                    # Player to replace (i)
+                    player_i,
+                    # Add noble to player
+                    Player.add_noble(player, noble))
+        except IndexError:
+            return None
     else:
         return None
 
@@ -349,9 +355,10 @@ def apply_game_actions(tabletop, action):
         return apply_payback_action_for_last_player(tabletop, action)
 
     elif isinstance(action, ValidNobleActions):
-        return apply_nobles_for_last_player(tabletop, action)
+        return apply_noble_for_last_player(tabletop, action)
 
     elif isinstance(action, ValidPlayerActions):
         return apply_action(tabletop, action)
 
+    import pudb; pudb.set_trace()
     raise Exception("What?", action)

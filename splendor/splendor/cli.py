@@ -1,3 +1,7 @@
+import sys
+import pickle
+import time
+import lmdb
 import itertools
 from dotted_dict import DottedDict
 from collections import namedtuple
@@ -9,13 +13,29 @@ from splendor.actions import ValidPlayerActions
 from splendor.types import Tabletop, Noble, Player
 
 TABLETOP = None
+DB = lmdb.open(f"games/{int(time.time())}.splendor")
+
 def set_current_tabletop(new_tabletop):
     global TABLETOP
+    if not TABLETOP:
+        with DB.begin(write=True) as in_txn:
+            in_txn.put(
+                pickle.dumps(None),
+                pickle.dumps((None, new_tabletop)))
+
     TABLETOP = new_tabletop
 
 def get_current_tabletop():
     global TABLETOP
     return TABLETOP
+
+def update_tabletop(action):
+    with DB.begin(write=True) as in_txn:
+        in_txn.put(
+            pickle.dumps(get_current_tabletop().turn),
+            pickle.dumps((action, get_current_tabletop())))
+
+    set_current_tabletop(actions.apply_game_actions(get_current_tabletop(), action))
 
 def bank_widgets(root, label, row, col):
     widget = DottedDict(dict( 
@@ -165,8 +185,9 @@ def setup_ui(root, update_fn):
 
     widgets = DottedDict(
         dict(
+            turns=root.add_label("", 0, 0),
             command_selection=root.add_scroll_menu(
-                'Available Actions', 0, 0, 
+                'Available Actions', 1, 0, 
                 row_span=14, column_span=6),
             players=[
                 dict(
@@ -197,7 +218,7 @@ def setup_ui(root, update_fn):
     def perform_action(widget):
         action = widget.get()
 
-        set_current_tabletop(actions.apply_game_actions(get_current_tabletop(), action))
+        update_tabletop(action)
 
         update_fn(widgets, get_current_tabletop())
 
@@ -306,37 +327,50 @@ def update_bank(collection, bank):
     update_gem_widget(collection.ruby, bank.ruby, py_cui.RED_ON_BLACK)
     update_gem_widget(collection.onyx, bank.onyx, py_cui.BLACK_ON_WHITE)
 
-def update_card(widget, card):
+def update_card(widget, card, is_turn=False):
     if card:
-        for (cost_val, widget_c) in itertools.zip_longest(card_cost(card), widget.costs):
-            if cost_val:
-                widget_c.set_title(cost_val)
-            else:
-                widget_c.set_title("")
-        widget.bonus.set_title(card_bonus_str(card.bonus))
-        widget.points.set_title(f"{card.points}☆")
+        if card.hidden and not is_turn:
+            for widget_c in widget.costs:
+                widget_c.set_title("?")
+
+            widget.bonus.set_title("?")
+            widget.points.set_title("?")
+        else:
+            for (cost_val, widget_c) in itertools.zip_longest(card_cost(card), widget.costs):
+                if cost_val:
+                    widget_c.set_title(cost_val)
+                else:
+                    widget_c.set_title("")
+            widget.bonus.set_title(card_bonus_str(card.bonus))
+            widget.points.set_title(f"{card.points}☆")
     else:
         for widget_c in widget.costs:
             widget_c.set_title('')
         widget.bonus.set_title('')
         widget.points.set_title('')
 
-def update_reserved(collection, player):
+def update_reserved(collection, player, is_turn=False):
     for i in range(0, 3):
         widget = collection.reserved[i]
         try:
             reserved = player.reserved[i]
-            update_card(widget, reserved)
+            update_card(widget, reserved, is_turn=is_turn)
         except Exception:
             update_card(widget, None)
 
 def update_noble(collection, noble):
-    collection.points.set_title(f"{noble.points}☆")
+    if noble:
+        collection.points.set_title(f"{noble.points}☆")
 
-    for (cost_val, widget_c) in itertools.zip_longest(noble_cost(noble), collection.costs):
-        if cost_val:
-            widget_c.set_title(cost_val)
-        else:
+        for (cost_val, widget_c) in itertools.zip_longest(noble_cost(noble), collection.costs):
+            if cost_val:
+                widget_c.set_title(cost_val)
+            else:
+                widget_c.set_title("")
+    else:
+        collection.points.set_title("")
+
+        for widget_c in collection.costs:
             widget_c.set_title("")
 
 def update_nobles(collection, number_visible, nobles):
@@ -344,17 +378,29 @@ def update_nobles(collection, number_visible, nobles):
 
     collection.label.set_title(f"{total-number_visible}♔")
     for i in range(number_visible):
-        update_noble(collection.nobles[i], nobles[i])
+        try:
+            update_noble(collection.nobles[i], nobles[i])
+        except IndexError:
+            update_noble(collection.nobles[i], None)
 
 def update_tier(tier, cards):
-    total = len(cards) - 4
+    total = max(0, len(cards) - 4)
 
     tier.label.set_title(f"{total}🂠")
 
     for i in range(4):
-        update_card(tier.cards[i], cards[i])
+        if len(cards) > i:
+            update_card(tier.cards[i], cards[i])
+        else:
+            update_card(tier.cards[i], None)
 
 def update_ui(widgets, tabletop):
+    widgets.turns.set_title(f"Turn {tabletop.turn}")
+
+    for (i, player) in enumerate(tabletop.players):
+        if Player.won(player):
+            raise Exception(f"Player {i} Won in {tabletop.turn} turns")
+
     widgets.command_selection.clear()
     turn_completed, actions_list = actions.next_game_actions(tabletop)
     widgets.command_selection.add_item_list(actions_list)
@@ -368,7 +414,7 @@ def update_ui(widgets, tabletop):
 
         update_bank(widgets.players[i].bank, player.bank)
         update_bonus(widgets.players[i].bonus, player)
-        update_reserved(widgets.players[i].reserved, player)
+        update_reserved(widgets.players[i].reserved, player, is_turn=Player.is_turn(tabletop, i))
 
     update_bank(widgets.table_bank, tabletop.bank)
     # Update nobles cards
