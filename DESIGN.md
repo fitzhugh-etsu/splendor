@@ -23,3 +23,7 @@ def get_available_gem_options(tabletop):
     # Get 3 gems of different colors
     # Get 2 gems of a single color (if there are >= 4 tokens)
 
+
+
+EXPLAIN!
+https://web.stanford.edu/~surag/posts/alphazero.html
