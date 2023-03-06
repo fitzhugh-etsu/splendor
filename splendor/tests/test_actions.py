@@ -1,13 +1,14 @@
 import unittest
 
 import splendor.actions as actions
-from splendor.actions import ValidPlayerActions, ValidGemPaybackActions
-from splendor.types import Bank, Card, Gems, Player, Tabletop
+from splendor.actions import (ValidGemPaybackActions, ValidNobleActions,
+                              ValidPlayerActions)
+from splendor.types import Bank, Card, Game, Gems, Player
 
 
 class TestActions(unittest.TestCase):
     def test_valid_actions(self):
-        tabletop = Tabletop.setup_game(seed=1)
+        game = Game.setup_game(seed=1)
         self.assertEqual(
             set((
                 ValidPlayerActions.PICK_DSE,
@@ -20,6 +21,24 @@ class TestActions(unittest.TestCase):
                 ValidPlayerActions.PICK_SEO,
                 ValidPlayerActions.PICK_SRO,
                 ValidPlayerActions.PICK_ERO,
+
+                ValidPlayerActions.PICK_SO,
+                ValidPlayerActions.PICK_DE,
+                ValidPlayerActions.PICK_SE,
+                ValidPlayerActions.PICK_DO,
+                ValidPlayerActions.PICK_DR,
+                ValidPlayerActions.PICK_EO,
+                ValidPlayerActions.PICK_RO,
+                ValidPlayerActions.PICK_ER,
+                ValidPlayerActions.PICK_SR,
+                ValidPlayerActions.PICK_DS,
+
+                ValidPlayerActions.PICK_D,
+                ValidPlayerActions.PICK_S,
+                ValidPlayerActions.PICK_O,
+                ValidPlayerActions.PICK_E,
+                ValidPlayerActions.PICK_R,
+
                 ValidPlayerActions.PICK_DD,
                 ValidPlayerActions.PICK_SS,
                 ValidPlayerActions.PICK_EE,
@@ -40,13 +59,13 @@ class TestActions(unittest.TestCase):
                 ValidPlayerActions.RESERVE_TIER_2_1,
                 ValidPlayerActions.RESERVE_TIER_2_2,
                 ValidPlayerActions.RESERVE_TIER_2_3)),
-            set(actions.valid_actions(tabletop)))
+            set([a.action for a in actions.valid_actions(game)]))
 
     def test_valid_actions_no_gem_type(self):
-        tabletop = Tabletop.setup_game(seed=1)
-        tabletop = tabletop._replace(
+        game = Game.setup_game(seed=1)
+        game = game._replace(
             # Update to have 0 emerald
-            bank=tabletop.bank._replace(emerald=0))
+            bank=game.bank._replace(emerald=0))
 
         self.assertEqual(
             set((
@@ -54,10 +73,25 @@ class TestActions(unittest.TestCase):
                 ValidPlayerActions.PICK_DSO,
                 ValidPlayerActions.PICK_DRO,
                 ValidPlayerActions.PICK_SRO,
+
+                ValidPlayerActions.PICK_SO,
+                ValidPlayerActions.PICK_DO,
+                ValidPlayerActions.PICK_DR,
+                ValidPlayerActions.PICK_RO,
+                ValidPlayerActions.PICK_SR,
+                ValidPlayerActions.PICK_DS,
+
+                ValidPlayerActions.PICK_D,
+                ValidPlayerActions.PICK_S,
+                ValidPlayerActions.PICK_O,
+                ValidPlayerActions.PICK_R,
+
                 ValidPlayerActions.PICK_DD,
                 ValidPlayerActions.PICK_SS,
                 ValidPlayerActions.PICK_RR,
                 ValidPlayerActions.PICK_OO,
+
+
                 ValidPlayerActions.RESERVE_TIER_0,
                 ValidPlayerActions.RESERVE_TIER_0_0,
                 ValidPlayerActions.RESERVE_TIER_0_1,
@@ -73,13 +107,13 @@ class TestActions(unittest.TestCase):
                 ValidPlayerActions.RESERVE_TIER_2_1,
                 ValidPlayerActions.RESERVE_TIER_2_2,
                 ValidPlayerActions.RESERVE_TIER_2_3)),
-            set(actions.valid_actions(tabletop)))
+            set([a.action for a in actions.valid_actions(game)]))
 
     def test_valid_actions_one_gem_type(self):
-        tabletop = Tabletop.setup_game(seed=1)
-        tabletop = tabletop._replace(
-            # Update to have 0 emerald
-            bank=tabletop.bank._replace(emerald=1))
+        game = Game.setup_game(seed=1)
+        game = game._replace(
+            # Update to have 1 emerald
+            bank=game.bank._replace(emerald=1))
 
         self.assertEqual(
             set((
@@ -93,6 +127,24 @@ class TestActions(unittest.TestCase):
                 ValidPlayerActions.PICK_SEO,
                 ValidPlayerActions.PICK_SRO,
                 ValidPlayerActions.PICK_ERO,
+
+                ValidPlayerActions.PICK_SO,
+                ValidPlayerActions.PICK_DE,
+                ValidPlayerActions.PICK_SE,
+                ValidPlayerActions.PICK_DO,
+                ValidPlayerActions.PICK_DR,
+                ValidPlayerActions.PICK_EO,
+                ValidPlayerActions.PICK_RO,
+                ValidPlayerActions.PICK_ER,
+                ValidPlayerActions.PICK_SR,
+                ValidPlayerActions.PICK_DS,
+
+                ValidPlayerActions.PICK_D,
+                ValidPlayerActions.PICK_S,
+                ValidPlayerActions.PICK_O,
+                ValidPlayerActions.PICK_E,
+                ValidPlayerActions.PICK_R,
+
                 ValidPlayerActions.PICK_DD,
                 ValidPlayerActions.PICK_SS,
                 ValidPlayerActions.PICK_RR,
@@ -112,160 +164,168 @@ class TestActions(unittest.TestCase):
                 ValidPlayerActions.RESERVE_TIER_2_1,
                 ValidPlayerActions.RESERVE_TIER_2_2,
                 ValidPlayerActions.RESERVE_TIER_2_3)),
-            set(actions.valid_actions(tabletop)))
+            set([a.action for a in actions.valid_actions(game)]))
 
     def test_buy_card(self):
         pass
 
     def test_pick_gems(self):
-        tabletop = Tabletop.setup_game(seed=1)
+        game = Game.setup_game(seed=1)
 
         self.assertTrue(
             actions.pick_gems(
-                tabletop,
+                game,
                 Gems(diamond=2)))
 
         self.assertTrue(
             actions.pick_gems(
-                tabletop,
+                game,
                 Gems(diamond=1, sapphire=1, onyx=1)))
 
         self.assertFalse(
             actions.pick_gems(
-                tabletop,
+                game,
                 Gems(diamond=2, sapphire=1, onyx=2)))
 
         self.assertFalse(
             actions.pick_gems(
-                tabletop,
+                game,
                 Gems(diamond=4)))
 
         self.assertFalse(
             actions.pick_gems(
-                tabletop,
+                game,
                 Gems(diamond=99)))
 
-    def test_apply_action(self):
-        tabletop = Tabletop.setup_game(seed=1, players=2)
-        self.assertEqual(0, tabletop.turn)
+    def test_eval_action(self):
+        game = Game.setup_game(seed=1, players=2)
+        self.assertEqual(0, game.turn)
+
 
         # First player can pick EE, but not second
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.PICK_SS)
-        self.assertTrue(tabletop)
-        self.assertEqual(1, tabletop.turn)
-        self.assertEqual(2, tabletop.bank.sapphire)
-        self.assertEqual(Bank(sapphire=2), tabletop.players[0].bank)
-        self.assertEqual(Bank(), tabletop.players[1].bank)
+        game = actions.eval_action(game, ValidPlayerActions.PICK_SS)
+
+        self.assertTrue(game)
+        self.assertEqual(1, game.turn)
+        self.assertEqual(2, game.bank.sapphire)
+        self.assertEqual(Bank(sapphire=2), game.players[0].bank)
+        self.assertEqual(Bank(), game.players[1].bank)
 
         # Not pick EE, but not second
         self.assertTrue(
-            ValidPlayerActions.PICK_SS not in actions.valid_actions(tabletop))
+            ValidPlayerActions.PICK_SS not in actions.valid_actions(game))
 
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.PICK_OO)
-        self.assertEqual(2, tabletop.turn)
-        self.assertEqual(2, tabletop.bank.sapphire)
-        self.assertEqual(2, tabletop.bank.onyx)
+        game = actions.eval_action(game, ValidPlayerActions.PICK_OO)
+        self.assertEqual(2, game.turn)
+        self.assertEqual(2, game.bank.sapphire)
+        self.assertEqual(2, game.bank.onyx)
 
-        self.assertEqual(Bank(sapphire=2), tabletop.players[0].bank)
-        self.assertEqual(Bank(onyx=2), tabletop.players[1].bank)
-
-        # Reserve Card!
-        self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(tabletop))
-        card_to_reserve = tabletop.decks[0][4]
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.RESERVE_TIER_0)
-        self.assertEqual(3, tabletop.turn)
-        self.assertEqual(39, len(tabletop.decks[0]))
-        self.assertEqual((card_to_reserve,), tabletop.players[0].reserved)
-        self.assertEqual(Bank(sapphire=2, gold=1), tabletop.players[0].bank)
-        self.assertEqual(Bank(onyx=2), tabletop.players[1].bank)
-
-        # Reserve Card
-        self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(tabletop))
-        card_to_reserve = tabletop.decks[0][4]
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.RESERVE_TIER_0)
-        self.assertEqual(4, tabletop.turn)
-        self.assertEqual(38, len(tabletop.decks[0]))
-        self.assertEqual((card_to_reserve,), tabletop.players[1].reserved)
-        self.assertEqual(Bank(sapphire=2, gold=1), tabletop.players[0].bank)
-        self.assertEqual(Bank(onyx=2, gold=1), tabletop.players[1].bank)
+        self.assertEqual(Bank(sapphire=2), game.players[0].bank)
+        self.assertEqual(Bank(onyx=2), game.players[1].bank)
 
         # Reserve Card!
         self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(tabletop))
-        card_to_reserve = tabletop.decks[0][4]
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.RESERVE_TIER_0)
-        self.assertEqual(5, tabletop.turn)
-        self.assertEqual(37, len(tabletop.decks[0]))
-        self.assertEqual(2, len(tabletop.players[0].reserved))
-        self.assertEqual(card_to_reserve, tabletop.players[0].reserved[0])
-        self.assertEqual(Bank(sapphire=2, gold=2), tabletop.players[0].bank)
-        self.assertEqual(Bank(onyx=2, gold=1), tabletop.players[1].bank)
+            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(game))
+        card_to_reserve = game.decks[0][4]
+
+        game = actions.eval_action(game, ValidPlayerActions.RESERVE_TIER_0)
+
+        self.assertEqual(3, game.turn)
+        self.assertEqual(39, len(game.decks[0]))
+        self.assertEqual((card_to_reserve._replace(hidden=True),), game.players[0].reserved)
+        self.assertEqual(Bank(sapphire=2, gold=1), game.players[0].bank)
+        self.assertEqual(Bank(onyx=2), game.players[1].bank)
 
         # Reserve Card
         self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(tabletop))
-        card_to_reserve = tabletop.decks[0][4]
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.RESERVE_TIER_0)
-        self.assertEqual(6, tabletop.turn)
-        self.assertEqual(36, len(tabletop.decks[0]))
-        self.assertEqual(2, len(tabletop.players[1].reserved))
-        self.assertEqual(card_to_reserve, tabletop.players[1].reserved[0])
-        self.assertEqual(Bank(sapphire=2, gold=2), tabletop.players[0].bank)
-        self.assertEqual(Bank(onyx=2, gold=2), tabletop.players[1].bank)
+            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(game))
+        card_to_reserve = game.decks[0][4]
+        game = actions.eval_action(game, ValidPlayerActions.RESERVE_TIER_0)
+        self.assertEqual(4, game.turn)
+        self.assertEqual(38, len(game.decks[0]))
+        self.assertEqual((card_to_reserve._replace(hidden=True),), game.players[1].reserved)
+        self.assertEqual(Bank(sapphire=2, gold=1), game.players[0].bank)
+        self.assertEqual(Bank(onyx=2, gold=1), game.players[1].bank)
+
+        # Reserve Card!
+        self.assertTrue(
+            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(game))
+        card_to_reserve = game.decks[0][4]
+        game = actions.eval_action(game, ValidPlayerActions.RESERVE_TIER_0)
+        self.assertEqual(5, game.turn)
+        self.assertEqual(37, len(game.decks[0]))
+        self.assertEqual(2, len(game.players[0].reserved))
+        # It's hidden
+        self.assertEqual(card_to_reserve._replace(hidden=True), game.players[0].reserved[0])
+        self.assertEqual(Bank(sapphire=2, gold=2), game.players[0].bank)
+        self.assertEqual(Bank(onyx=2, gold=1), game.players[1].bank)
+
+        # Reserve Card
+        self.assertTrue(
+            ValidPlayerActions.BUY_RESERVED_0 not in actions.valid_actions(game))
+        card_to_reserve = game.decks[0][4]
+        game = actions.eval_action(game, ValidPlayerActions.RESERVE_TIER_0)
+        self.assertEqual(6, game.turn)
+        self.assertEqual(36, len(game.decks[0]))
+        self.assertEqual(2, len(game.players[1].reserved))
+        self.assertEqual(card_to_reserve._replace(hidden=True), game.players[1].reserved[0])
+        self.assertEqual(Bank(sapphire=2, gold=2), game.players[0].bank)
+        self.assertEqual(Bank(onyx=2, gold=2), game.players[1].bank)
 
         self.assertEqual(
-            Bank(diamond=4.0, 
-                sapphire=2.0, 
-                emerald=4.0, 
-                ruby=4.0, 
-                onyx=2.0, 
+            Bank(
+                diamond=4.0,
+                sapphire=2.0,
+                emerald=4.0,
+                ruby=4.0,
+                onyx=2.0,
                 gold=1),
-            tabletop.bank)
+            game.bank)
+
         # Player 0 turn can now buy RESERVED_0 and _1
         self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_1 in actions.valid_actions(tabletop))
+            ValidPlayerActions.BUY_RESERVED_1 in [a.action for a in actions.valid_actions(game)])
         self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_0 in actions.valid_actions(tabletop))
+            ValidPlayerActions.BUY_RESERVED_0 in [a.action for a in actions.valid_actions(game)])
 
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.BUY_RESERVED_0)
-        self.assertEqual(7, tabletop.turn)
+        game = actions.eval_action(game, ValidPlayerActions.BUY_RESERVED_0)
+        self.assertEqual(7, game.turn)
 
         # Should have returned the tkens??
         # Step through
         self.assertEqual(
-            Bank(diamond=4.0,
+            Bank(
+                diamond=4.0,
                 sapphire=3.0,
                 emerald=4.0,
                 ruby=4.0,
                 onyx=2.0,
                 gold=3),
-            tabletop.bank)
-        self.assertEqual(36, len(tabletop.decks[0]))
-        self.assertEqual(1, len(tabletop.players[0].reserved))
-        self.assertEqual(2, len(tabletop.players[1].reserved))
+            game.bank)
+        self.assertEqual(36, len(game.decks[0]))
+        self.assertEqual(1, len(game.players[0].reserved))
+        self.assertEqual(2, len(game.players[1].reserved))
         # 2 diamond + 1 sapphire cost == 2 gold and 1 sapphire spend => 1 sapphire left
-        self.assertEqual(Bank(sapphire=1), tabletop.players[0].bank)
-        self.assertEqual(Bank(onyx=2, gold=2), tabletop.players[1].bank)
+        self.assertEqual(Bank(sapphire=1), game.players[0].bank)
+        self.assertEqual(Bank(onyx=2, gold=2), game.players[1].bank)
 
         # Player 1 turn can now buy RESERVED_0 and _1
         self.assertTrue(
-            ValidPlayerActions.BUY_RESERVED_1 in actions.valid_actions(tabletop))
-        tabletop = actions.apply_action(tabletop, ValidPlayerActions.BUY_RESERVED_1)
-        self.assertEqual(8, tabletop.turn)
-        self.assertEqual(36, len(tabletop.decks[0]))
-        self.assertEqual(1, len(tabletop.players[0].reserved))
-        self.assertEqual(1, len(tabletop.players[1].reserved))
-        self.assertTrue(tabletop.players[1].reserved[0])
-        self.assertEqual(Bank(sapphire=1), tabletop.players[0].bank)
+            ValidPlayerActions.BUY_RESERVED_1 in [a.action for a in actions.valid_actions(game)])
+        game = actions.eval_action(game, ValidPlayerActions.BUY_RESERVED_1)
+        self.assertEqual(8, game.turn)
+        self.assertEqual(36, len(game.decks[0]))
+        self.assertEqual(1, len(game.players[0].reserved))
+        self.assertEqual(1, len(game.players[1].reserved))
+        self.assertTrue(game.players[1].reserved[0])
+        self.assertEqual(Bank(sapphire=1), game.players[0].bank)
 
         # 4 onyx cost => 2 onyx + 2 gold spent => 0 bank
-        self.assertEqual(Bank(), tabletop.players[1].bank)
+        self.assertEqual(Bank(), game.players[1].bank)
 
     def test_visiting_nobles(self):
-        tabletop = Tabletop.setup_game(seed=1, players=2)
-        self.assertEqual(0, tabletop.turn)
+        game = Game.setup_game(seed=1, players=2)
+        self.assertEqual(0, game.turn)
 
         # Cheat, noble needs 4S 4E
         new_player = Player(
@@ -280,70 +340,72 @@ class TestActions(unittest.TestCase):
                 Card(bonus=Gems(emerald=1))))
 
         # Turn "finished", now we can check
-        tabletop = tabletop._replace(
+        game = game._replace(
             turn=1,
             players=(new_player,))
 
-        visiting_nobles = actions.visiting_nobles_for_last_player(tabletop)
-        self.assertEqual(((0, tabletop.nobles_deck[0]),), visiting_nobles)
+        noble0 = game.nobles_deck[0]
 
-        tabletop = actions.accept_noble_for_last_player(tabletop, 0)
+        visiting_nobles = list(actions.valid_nobles_for_last_player(game))
+        self.assertEqual(ValidNobleActions.NOBLE_0, visiting_nobles[0].action)
+
+        game = visiting_nobles[0].game
 
         # don't change the turn
-        self.assertEqual(1, tabletop.turn)
-        self.assertEqual(tuple([n[1] for n in visiting_nobles]), tabletop.players[0].nobles)
+        self.assertEqual(1, game.turn)
+        self.assertEqual(game.players[0].nobles[0], noble0)
 
     def test_returning_gems(self):
-        tabletop = Tabletop.setup_game(seed=1, players=2)
-        self.assertEqual(0, tabletop.turn)
+        game = Game.setup_game(seed=1, players=2)
+        self.assertEqual(0, game.turn)
         self.assertEqual(
             tuple(),
-            tuple(list(actions.valid_payback_actions_for_last_player(tabletop))))
+            tuple(list(actions.valid_payback_actions_for_last_player(game))))
 
         self.assertEqual(
             (ValidGemPaybackActions.RETURN_E,),
-            tuple(list(actions.valid_payback_actions_for_last_player(
-                tabletop._replace(
+            tuple([a.action for a in actions.valid_payback_actions_for_last_player(
+                game._replace(
                     players=(Player(
                         bank=Bank(
-                            emerald=11, )),))))))
+                            emerald=11, )),)))]))
 
         self.assertEqual(
             (ValidGemPaybackActions.RETURN_D,),
-            tuple(list(actions.valid_payback_actions_for_last_player(
-                tabletop._replace(
+            tuple([a.action for a in (actions.valid_payback_actions_for_last_player(
+                game._replace(
                     players=(Player(
                         bank=Bank(
-                            diamond=11)),))))))
+                            diamond=11)),))))]))
 
         self.assertEqual(
             (ValidGemPaybackActions.RETURN_S,),
-            tuple(list(actions.valid_payback_actions_for_last_player(
-                tabletop._replace(
+            tuple([a.action for a in actions.valid_payback_actions_for_last_player(
+                game._replace(
                     players=(Player(
                         bank=Bank(
-                            sapphire=11)),))))))
-        
+                            sapphire=11)),)))]))
+
         self.assertEqual(
             (ValidGemPaybackActions.RETURN_R,),
-            tuple(list(actions.valid_payback_actions_for_last_player(
-                tabletop._replace(
+            tuple([a.action for a in actions.valid_payback_actions_for_last_player(
+                game._replace(
                     players=(Player(
                         bank=Bank(
-                            ruby=11)),))))))
+                            ruby=11)),)))]))
 
         self.assertEqual(
             (ValidGemPaybackActions.RETURN_O,),
-            tuple(list(actions.valid_payback_actions_for_last_player(
-                tabletop._replace(
+            tuple([a.action for a in actions.valid_payback_actions_for_last_player(
+                game._replace(
                     players=(Player(
                         bank=Bank(
-                            onyx=11)),))))))
+                            onyx=11)),)))]))
 
         self.assertEqual(
             (ValidGemPaybackActions.RETURN_G,),
-            tuple(list(actions.valid_payback_actions_for_last_player(
-                tabletop._replace(
+            tuple([a.action for a in actions.valid_payback_actions_for_last_player(
+                game._replace(
                     players=(Player(
                         bank=Bank(
-                            gold=11)),))))))
+                            gold=11)),)))]))

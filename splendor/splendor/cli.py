@@ -1,16 +1,17 @@
-import sys
-import pickle
-import time
-import lmdb
 import itertools
-from dotted_dict import DottedDict
+import pickle
+import sys
+import time
 from collections import namedtuple
-from termcolor import colored
+
+import lmdb
 import py_cui
+from dotted_dict import DottedDict
+from termcolor import colored
 
 import splendor.actions as actions
 from splendor.actions import ValidPlayerActions
-from splendor.types import Tabletop, Noble, Player
+from splendor.types import Noble, Player, Tabletop
 
 TABLETOP = None
 DB = lmdb.open(f"games/{int(time.time())}.splendor")
@@ -35,10 +36,10 @@ def update_tabletop(action):
             pickle.dumps(get_current_tabletop().turn),
             pickle.dumps((action, get_current_tabletop())))
 
-    set_current_tabletop(actions.apply_game_actions(get_current_tabletop(), action))
+    set_current_tabletop(action.tabletop)
 
 def bank_widgets(root, label, row, col):
-    widget = DottedDict(dict( 
+    widget = DottedDict(dict(
         label=root.add_label(
             label,
             row,
@@ -63,7 +64,7 @@ def bank_widgets(root, label, row, col):
 
 def bonus_widgets(root, row, col):
     widget = DottedDict(
-        dict( 
+        dict(
             label=root.add_label(
                 "🏆",
                 row,
@@ -136,7 +137,7 @@ def noble_widget(root, row, col):
     return label
 
 def reserved_widgets(root, row, col):
-    labels = dict( 
+    labels = dict(
         labels=[
             root.add_label( "-", row, col),
             root.add_label( "-", row + 1, col),
@@ -148,7 +149,7 @@ def reserved_widgets(root, row, col):
     return labels
 
 def nobles_widgets(root, row, col):
-    labels = dict( 
+    labels = dict(
         label=root.add_block_label(
             "♔",
             row,
@@ -166,7 +167,7 @@ def nobles_widgets(root, row, col):
     return labels
 
 def tier_widgets(root, row, col):
-    return dict( 
+    return dict(
         label=root.add_label(
             "🂠",
             row,
@@ -187,7 +188,7 @@ def setup_ui(root, update_fn):
         dict(
             turns=root.add_label("", 0, 0),
             command_selection=root.add_scroll_menu(
-                'Available Actions', 1, 0, 
+                'Available Actions', 1, 0,
                 row_span=14, column_span=6),
             players=[
                 dict(
@@ -244,32 +245,32 @@ def update_bonus(collection, player):
     collection.points.set_title(f"{points}☆")
 
     update_gem_widget(
-        collection.emerald, 
-        bonus.emerald, 
+        collection.emerald,
+        bonus.emerald,
         py_cui.GREEN_ON_BLACK,
         None)
 
     update_gem_widget(
-        collection.diamond, 
-        bonus.diamond, 
+        collection.diamond,
+        bonus.diamond,
         py_cui.CYAN_ON_BLACK,
         None)
 
     update_gem_widget(
-        collection.sapphire, 
-        bonus.sapphire, 
+        collection.sapphire,
+        bonus.sapphire,
         py_cui.BLUE_ON_BLACK,
         None)
 
     update_gem_widget(
-        collection.ruby, 
-        bonus.ruby, 
+        collection.ruby,
+        bonus.ruby,
         py_cui.RED_ON_BLACK,
         None)
 
     update_gem_widget(
-        collection.onyx, 
-        bonus.onyx, 
+        collection.onyx,
+        bonus.onyx,
         py_cui.BLACK_ON_WHITE,
         None)
 
@@ -419,7 +420,7 @@ def update_ui(widgets, tabletop):
     update_bank(widgets.table_bank, tabletop.bank)
     # Update nobles cards
     update_nobles(
-        widgets.nobles, 
+        widgets.nobles,
         Noble.number_visible(tabletop.players),
         tabletop.nobles_deck)
     for (i, tier) in enumerate(reversed(tabletop.decks)):

@@ -1,6 +1,6 @@
 import unittest
 
-from splendor.types import Bank, Card, Gems, Tabletop
+from splendor.types import Bank, Card, Gems, Game
 
 
 class TestTypes(unittest.TestCase):
@@ -23,25 +23,25 @@ class TestTypes(unittest.TestCase):
             (Card(points=11), Card(points=12), Card(points=13)),
             (Card(points=21), Card(points=22), Card(points=23)))
 
-        tabletop = Tabletop.setup_game()._replace(decks=decks)
+        game = Game.setup_game()._replace(decks=decks)
 
         self.assertEqual((
             (Card(points=2), Card(points=3)),
             (Card(points=11), Card(points=12), Card(points=13)),
             (Card(points=21), Card(points=22), Card(points=23))),
-            Tabletop.remove_card_from_deck(tabletop, 0, 0).decks)
+            Game.remove_card_from_deck(game, 0, 0).decks)
 
         self.assertEqual((
             (Card(points=1), Card(points=2), Card(points=3)),
             (Card(points=11), Card(points=13)),
             (Card(points=21), Card(points=22), Card(points=23))),
-            Tabletop.remove_card_from_deck(tabletop, 1, 1).decks)
+            Game.remove_card_from_deck(game, 1, 1).decks)
 
         self.assertEqual((
             (Card(points=1), Card(points=2), Card(points=3)),
             (Card(points=11), Card(points=12), Card(points=13)),
             (Card(points=21), Card(points=22))),
-            Tabletop.remove_card_from_deck(tabletop, 2, 2).decks)
+            Game.remove_card_from_deck(game, 2, 2).decks)
 
     def test_player_purchase_card(self):
         pass

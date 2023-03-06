@@ -5,11 +5,11 @@ from . import defs as d
 
 
 class Gems(NamedTuple):
-    diamond: float = 0.0
-    sapphire: float = 0.0
-    emerald: float = 0.0
-    ruby: float = 0.0
-    onyx: float = 0.0
+    diamond: int = 0.0
+    sapphire: int = 0.0
+    emerald: int = 0.0
+    ruby: int = 0.0
+    onyx: int = 0.0
 
     @staticmethod
     def subtract(g1, g2, allow_negative=True):
@@ -91,12 +91,12 @@ ONYX = Gems(onyx=1.0)
 
 class Card(NamedTuple):
     cost: Gems = Gems()
-    points: float = 0
+    points: int = 0
     bonus: Gems = Gems()
     hidden: bool = False
 
 class Noble(NamedTuple):
-    points: float
+    points: int
     cost: Gems
 
     @staticmethod
@@ -133,13 +133,20 @@ class Player(NamedTuple):
         return Player.points(player) >= d.POINTS_FOR_WIN
 
     @staticmethod
-    def is_turn(tabletop, player_i):
-        return (tabletop.turn % len(tabletop.players)) == player_i
+    def is_turn(game, player_i):
+        return (game.turn % len(game.players)) == player_i
 
     @staticmethod
     def points(player):
         return sum([n.points for n in player.nobles]) + \
             sum([c.points for c in player.purchased])
+
+    @staticmethod
+    def add_gems(player, gems):
+        return player._replace(
+            bank=Bank.add_gems(
+                player.bank,
+                gems))
 
     @staticmethod
     def update_bank(player, bank):
@@ -161,9 +168,9 @@ class Player(NamedTuple):
             purchased=((card._replace(hidden=False),) + player.purchased))
 
     @staticmethod
-    def add_card_to_reserved(player, card):
+    def add_card_to_reserved(player, card, hidden=False):
         return player._replace(
-            reserved=((card._replace(hidden=True),) + player.reserved))
+            reserved=((card._replace(hidden=hidden),) + player.reserved))
 
     @staticmethod
     def can_reserve_card(player):
@@ -309,7 +316,7 @@ def nobles_deck(seed=None):
 
     return random.Random(seed).sample(all_cards, len(all_cards))
 
-class Tabletop(NamedTuple):
+class Game(NamedTuple):
     nobles_deck: tuple
     decks: tuple
 
@@ -318,36 +325,36 @@ class Tabletop(NamedTuple):
     turn: int = 0
 
     @staticmethod
-    def replace_player(tabletop, player_i: int, player: Player):
+    def replace_player(game, player_i: int, player: Player):
         new_players = (
-            tabletop.players[0:player_i] +
+            game.players[0:player_i] +
             (player,) +
-            tabletop.players[player_i + 1:])
-        return tabletop._replace(players=new_players)
+            game.players[player_i + 1:])
+        return game._replace(players=new_players)
 
     @staticmethod
-    def remove_noble_from_deck(tabletop, noble_i: int):
-        return tabletop._replace(
-            nobles_deck=(tabletop.nobles_deck[0:noble_i] +
-                         tabletop.nobles_deck[noble_i + 1:]))
+    def remove_noble_from_deck(game, noble_i: int):
+        return game._replace(
+            nobles_deck=(game.nobles_deck[0:noble_i] +
+                         game.nobles_deck[noble_i + 1:]))
 
     @staticmethod
-    def remove_card_from_deck(tabletop, tier, card_i):
+    def remove_card_from_deck(game, tier, card_i):
         new_deck = (
-            tabletop.decks[tier][0:card_i] +
-            tabletop.decks[tier][card_i + 1:])
+            game.decks[tier][0:card_i] +
+            game.decks[tier][card_i + 1:])
 
         new_decks = (
-            tabletop.decks[0:tier] +
+            game.decks[0:tier] +
             (new_deck, ) +
-            tabletop.decks[tier + 1:])
+            game.decks[tier + 1:])
 
-        return tabletop._replace(decks=new_decks)
+        return game._replace(decks=new_decks)
 
     @staticmethod
-    def get_card(tabletop, tier, card_i):
+    def get_card(game, tier, card_i):
         try:
-            return tabletop.decks[tier][card_i]
+            return game.decks[tier][card_i]
         except IndexError:
             return False
 
@@ -359,7 +366,7 @@ class Tabletop(NamedTuple):
         elif players == 2:
             gem_count = 4
 
-        return Tabletop(
+        return Game(
             nobles_deck=nobles_deck(seed=seed),
             decks=(
                 tier_0_deck(seed=seed),
@@ -373,3 +380,11 @@ class Tabletop(NamedTuple):
                 ruby=gem_count,
                 onyx=gem_count),
             players=(Player(),) * players)
+
+
+class PerformedAction(NamedTuple):
+    action: None
+    game: Game
+
+    def __str__(self):
+        return str(self.action)
