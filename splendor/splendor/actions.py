@@ -1,8 +1,16 @@
 from enum import Enum
+from typing import NamedTuple
 
 import splendor.defs as d
-from splendor.types import Bank, Game, Gems, Noble, PerformedAction, Player
+from splendor.models import Bank, Game, Gems, Noble, Player
 
+
+class PerformedAction(NamedTuple):
+    action: None
+    game: Game
+
+    def __str__(self):
+        return str(self.action)
 
 def _new_turn(game):
     return game._replace(turn=game.turn + 1)
@@ -255,7 +263,6 @@ def return_gem(game, gems):
                     new_bank=new_table_bank,
                     new_player_bank=(player_i, new_player_bank))
     except TypeError:
-        import pudb; pudb.set_trace()
         pass
 
 def accept_noble(game, noble_i):

@@ -3,7 +3,7 @@ import unittest
 import splendor.actions as actions
 from splendor.actions import (ValidGemPaybackActions, ValidNobleActions,
                               ValidPlayerActions)
-from splendor.types import Bank, Card, Game, Gems, Player
+from splendor.models import Bank, Card, Game, Gems, Player
 
 
 class TestActions(unittest.TestCase):

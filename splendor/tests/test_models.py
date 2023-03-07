@@ -1,9 +1,9 @@
 import unittest
 
-from splendor.types import Bank, Card, Gems, Game
+from splendor.models import Bank, Card, Game, Gems
 
 
-class TestTypes(unittest.TestCase):
+class TestModels(unittest.TestCase):
     def test_gold_actions(self):
         self.assertTrue(
             Bank.is_solvent(
