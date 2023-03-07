@@ -1,24 +1,19 @@
-from itertools import zip_longest
-from typing import NamedTuple
+from itertools import chain, zip_longest
 
-from .models import Bank, Card, Game, Gems, Noble, Player
+from . import actions
+from .models import Bank, Card, Game, Noble, Player
 
-
-def _iterate(l, number_visible, default):
-    for i in range(number_visible):
-        try:
-            if l[i]:
-                yield l[i]
-        except IndexError:
-            yield default
 
 def inputs(game):
+    """ These are the inputs to a NN.
+      constant size, no matter how many players there are.
+    """
     inputs = []
 
     #  table_bank: Bank = Bank()
     inputs.extend(Bank.to_inputs(game.bank))
 
-    ## NOBLES
+    # NOBLES
     #  nobles_left: int = 0
     inputs.append(len(game.nobles_deck))
 
@@ -34,7 +29,7 @@ def inputs(game):
             fillvalue=Noble()):
         inputs.extend(Noble.to_inputs(noble))
 
-    ## T0 CARDS
+    # Tier cards
     for tier in range(3):
         #  tier_X_left: int = 0
         inputs.append(len(game.decks[tier]))
@@ -58,7 +53,11 @@ def inputs(game):
     return inputs
 
 def outputs(game):
-    pass
+    # These are the outputs from the NN.
+    # A list of outputs from the NN maps to these actions.
+    # The list is constant, so invalid actions are None. Valid ones give a PerformedAction
+    return list(actions.valid_actions(game, yield_invalid=True))
 
 if __name__ == "__main__":
     print(inputs(Game.setup_game()))
+    print(list(outputs(Game.setup_game())))

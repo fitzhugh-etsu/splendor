@@ -10,7 +10,8 @@ setup(
         'py_cui',
         'termcolor',
         'dotted-dict',
-        'lmdb'
+        'lmdb',
+        'numpy'
     ],
     dependency_links=[
     ],

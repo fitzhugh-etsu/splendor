@@ -376,23 +376,36 @@ class ValidPlayerActions(Enum):
 def eval_action(game, action_enum):
     return action_enum.value[0](game, *action_enum.value[1])
 
-def valid_actions(game):
+def valid_actions(game, yield_invalid=False):
     for action in ValidPlayerActions:
         new_game = eval_action(game, action)
         if new_game:
             yield PerformedAction(action=action, game=new_game)
+        elif yield_invalid:
+            yield None
 
-def valid_payback_actions_for_last_player(game):
+def valid_payback_actions_for_last_player(game, yield_invalid=False):
     for action in ValidGemPaybackActions:
         new_game = eval_action(game, action)
         if new_game:
             yield PerformedAction(action=action, game=new_game)
+        elif yield_invalid:
+            yield None
 
-def valid_nobles_for_last_player(game):
+def valid_nobles_for_last_player(game, yield_invalid=False):
     for action in ValidNobleActions:
         new_game = eval_action(game, action)
         if new_game:
             yield PerformedAction(action=action, game=new_game)
+        elif yield_invalid:
+            yield None
+
+def all_actions():
+    for action in ValidNobleActions:
+        new_game = eval_action(game, action)
+        if new_game:
+            yield PerformedAction(action=action, game=new_game)
+
 
 def next_game_actions(game):
     # If there are > 10 we need to give some gems back
