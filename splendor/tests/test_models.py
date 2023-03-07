@@ -23,7 +23,7 @@ class TestModels(unittest.TestCase):
             (Card(points=11), Card(points=12), Card(points=13)),
             (Card(points=21), Card(points=22), Card(points=23)))
 
-        game = Game.setup_game()._replace(decks=decks)
+        game = Game.setup_game(seed=0)._replace(decks=decks)
 
         self.assertEqual((
             (Card(points=2), Card(points=3)),

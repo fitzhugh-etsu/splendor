@@ -1,7 +1,9 @@
+from itertools import zip_longest
 from typing import NamedTuple
 
 from .. import defs as d
 from .bank import Bank
+from .card import Card
 from .gems import Gems
 
 
@@ -73,3 +75,19 @@ class Player(NamedTuple):
     def remove_card_from_reserved(player, reserved_i):
         return player._replace(
             reserved=(player.reserved[0:reserved_i] + player.reserved[reserved_i + 1:]))
+
+    @staticmethod
+    def to_inputs(player, is_current_player=False):
+        inputs = []
+        inputs.extend(Bank.to_inputs(player.bank))
+        inputs.extend(Gems.to_inputs(Player.get_bonus(player)))
+        inputs.append(Player.points(player))
+
+        # Reserved
+        for (i, reserved_card) in zip_longest(
+                range(3),
+                player.reserved[0:3],
+                fillvalue=Card()):
+            inputs.extend(Card.to_inputs(reserved_card, hidden=not is_current_player))
+
+        return inputs

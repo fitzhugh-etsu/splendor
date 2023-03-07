@@ -2,41 +2,38 @@ import itertools
 import pickle
 import sys
 import time
-from collections import namedtuple
 
 import lmdb
 import py_cui
 from dotted_dict import DottedDict
-from termcolor import colored
 
 import splendor.actions as actions
-from splendor.actions import ValidPlayerActions
-from splendor.types import Noble, Player, Tabletop
+from splendor.models import Game, Noble, Player
 
 TABLETOP = None
 DB = lmdb.open(f"games/{int(time.time())}.splendor")
 
-def set_current_tabletop(new_tabletop):
+def set_current_game(new_game):
     global TABLETOP
     if not TABLETOP:
         with DB.begin(write=True) as in_txn:
             in_txn.put(
                 pickle.dumps(None),
-                pickle.dumps((None, new_tabletop)))
+                pickle.dumps((None, new_game)))
 
-    TABLETOP = new_tabletop
+    TABLETOP = new_game
 
-def get_current_tabletop():
+def get_current_game():
     global TABLETOP
     return TABLETOP
 
-def update_tabletop(action):
+def update_game(action):
     with DB.begin(write=True) as in_txn:
         in_txn.put(
-            pickle.dumps(get_current_tabletop().turn),
-            pickle.dumps((action, get_current_tabletop())))
+            pickle.dumps(get_current_game().turn),
+            pickle.dumps((action, get_current_game())))
 
-    set_current_tabletop(action.tabletop)
+    set_current_game(action.game)
 
 def bank_widgets(root, label, row, col):
     widget = DottedDict(dict(
@@ -139,11 +136,11 @@ def noble_widget(root, row, col):
 def reserved_widgets(root, row, col):
     labels = dict(
         labels=[
-            root.add_label( "-", row, col),
-            root.add_label( "-", row + 1, col),
-            root.add_label( "-", row + 2, col)],
+            root.add_label("-", row + 0, col),
+            root.add_label("-", row + 1, col),
+            root.add_label("-", row + 2, col)],
         reserved=[
-            card_widget(root, row, col+ 1),
+            card_widget(root, row + 0, col + 1),
             card_widget(root, row + 1, col + 1),
             card_widget(root, row + 2, col + 1)])
     return labels
@@ -157,12 +154,11 @@ def nobles_widgets(root, row, col):
             row_span=1,
             column_span=1),
         nobles=[
-            noble_widget(root, row,     col + 2),
+            noble_widget(root, row + 0, col + 2),
             noble_widget(root, row + 1, col + 2),
             noble_widget(root, row + 2, col + 2),
             noble_widget(root, row + 3, col + 2),
-            noble_widget(root, row + 4, col + 2)]
-        )
+            noble_widget(root, row + 4, col + 2)])
 
     return labels
 
@@ -175,7 +171,7 @@ def tier_widgets(root, row, col):
             row_span=1,
             column_span=1),
         cards=[
-            card_widget(root, row ,    col + 2),
+            card_widget(root, row + 0, col + 2),
             card_widget(root, row + 1, col + 2),
             card_widget(root, row + 2, col + 2),
             card_widget(root, row + 3, col + 2)])
@@ -215,13 +211,12 @@ def setup_ui(root, update_fn):
                 tier_widgets(root, 13, 15),
                 tier_widgets(root, 18, 15)]))
 
-
     def perform_action(widget):
         action = widget.get()
 
-        update_tabletop(action)
+        update_game(action)
 
-        update_fn(widgets, get_current_tabletop())
+        update_fn(widgets, get_current_game())
 
     widgets.command_selection.add_key_command(
         py_cui.keys.KEY_ENTER,
@@ -229,7 +224,7 @@ def setup_ui(root, update_fn):
 
     root.move_focus(widgets.command_selection)
 
-    update_fn(widgets, get_current_tabletop())
+    update_fn(widgets, get_current_game())
 
 
 def update_gem_widget(widget, count, color, blank_color=None):
@@ -277,7 +272,6 @@ def update_bonus(collection, player):
 def card_cost(card):
     costs = []
 
-    #costs.append(f"{card.points}$")
     if card.cost.emerald:
         costs.append(f"{int(card.cost.emerald)}E")
     if card.cost.diamond:
@@ -395,39 +389,37 @@ def update_tier(tier, cards):
         else:
             update_card(tier.cards[i], None)
 
-def update_ui(widgets, tabletop):
-    widgets.turns.set_title(f"Turn {tabletop.turn}")
+def update_ui(widgets, game):
+    widgets.turns.set_title(f"Turn {game.turn}")
 
-    for (i, player) in enumerate(tabletop.players):
+    for (i, player) in enumerate(game.players):
         if Player.won(player):
-            raise Exception(f"Player {i} Won in {tabletop.turn} turns")
+            raise Exception(f"Player {i} Won in {game.turn} turns")
 
     widgets.command_selection.clear()
-    turn_completed, actions_list = actions.next_game_actions(tabletop)
+    turn_completed, actions_list = actions.next_game_actions(game)
     widgets.command_selection.add_item_list(actions_list)
 
-
-    for (i, player) in enumerate(tabletop.players):
-        if (turn_completed and Player.is_turn(tabletop, i)) or (not turn_completed and Player.is_turn(tabletop, i + 1)):
+    for (i, player) in enumerate(game.players):
+        if (turn_completed and Player.is_turn(game, i)) or (not turn_completed and Player.is_turn(game, i + 1)):
             widgets.players[i].bank.label.set_color(py_cui.BLACK_ON_WHITE)
         else:
             widgets.players[i].bank.label.set_color(py_cui.WHITE_ON_BLACK)
 
         update_bank(widgets.players[i].bank, player.bank)
         update_bonus(widgets.players[i].bonus, player)
-        update_reserved(widgets.players[i].reserved, player, is_turn=Player.is_turn(tabletop, i))
+        update_reserved(widgets.players[i].reserved, player, is_turn=Player.is_turn(game, i))
 
-    update_bank(widgets.table_bank, tabletop.bank)
+    update_bank(widgets.table_bank, game.bank)
     # Update nobles cards
     update_nobles(
         widgets.nobles,
-        Noble.number_visible(tabletop.players),
-        tabletop.nobles_deck)
-    for (i, tier) in enumerate(reversed(tabletop.decks)):
+        Noble.number_visible(game.players),
+        game.nobles_deck)
+    for (i, tier) in enumerate(reversed(game.decks)):
         update_tier(widgets.tiers[i], tier)
 
 if __name__ == "__main__":
-    import sys
     seed = None
     players = 4
     if len(sys.argv) > 2:
@@ -436,7 +428,7 @@ if __name__ == "__main__":
         seed = int(sys.argv[2])
 
     root = py_cui.PyCUI(30, 30)
-    set_current_tabletop(Tabletop.setup_game(players=players, seed=seed))
+    set_current_game(Game.setup_game(players=players, seed=seed))
 
     setup_ui(root, update_ui)
 

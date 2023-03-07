@@ -1,5 +1,6 @@
 bank      (6) - [G, D, S, E, R, O)
 
+nobles_left (1)
 noble_0   (6) - [prestige, D, S, E, R, O]
 noble_1   (6) - [prestige, D, S, E, R, O]
 noble_2   (6) - [prestige, D, S, E, R, O]

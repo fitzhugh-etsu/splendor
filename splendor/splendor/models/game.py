@@ -1,3 +1,4 @@
+import random
 from typing import NamedTuple
 
 from . import decks as decks
@@ -48,7 +49,7 @@ class Game(NamedTuple):
             return False
 
     @staticmethod
-    def setup_game(seed=0, players=4):
+    def setup_game(seed=None, players=4):
         gem_count = 7
         if players == 3:
             gem_count = 5

@@ -9,6 +9,10 @@ class Gems(NamedTuple):
     onyx: int = 0
 
     @staticmethod
+    def to_inputs(gems):
+        return tuple([v for v in gems])
+
+    @staticmethod
     def subtract(g1, g2, allow_negative=True):
         if allow_negative:
             return Gems(*[g1[i] - g2[i] for i in range(len(Gems()))])

@@ -12,6 +12,10 @@ class Bank(NamedTuple):
     gold: int = 0
 
     @staticmethod
+    def to_inputs(bank):
+        return tuple([v for v in bank])
+
+    @staticmethod
     def difference(b1, b2):
         return Bank(*[b1[i] - b2[i] for i in range(len(Bank()))])
 

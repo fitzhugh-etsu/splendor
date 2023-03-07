@@ -5,8 +5,12 @@ from .player import Player
 
 
 class Noble(NamedTuple):
-    points: int
-    cost: Gems
+    points: int = 0
+    cost: Gems = Gems()
+
+    @staticmethod
+    def to_inputs(noble):
+        return (noble.points,) + Gems.to_inputs(noble.cost)
 
     @staticmethod
     def number_visible(players):
