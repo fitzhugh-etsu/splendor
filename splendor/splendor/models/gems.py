@@ -22,3 +22,6 @@ class Gems(NamedTuple):
     @staticmethod
     def add(g1, g2, allow_negative=True):
         return Gems(*[g1[i] + g2[i] for i in range(len(Gems()))])
+
+    def __str__(self):
+        return f"{self.diamond}D {self.sapphire}S {self.emerald}E {self.ruby}R {self.onyx}O"

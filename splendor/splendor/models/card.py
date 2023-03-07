@@ -15,3 +15,6 @@ class Card(NamedTuple):
             return Card.to_inputs(Card())
         else:
             return Gems.to_inputs(card.cost) + (card.points,) + Gems.to_inputs(card.bonus)
+
+    def __str__(self):
+        return f"Cost: {self.cost} Points: {self.points} Bonus: {self.bonus}"

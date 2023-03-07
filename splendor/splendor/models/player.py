@@ -16,6 +16,20 @@ class Player(NamedTuple):
     # How many gems do you have
     bank: Bank = Bank()
 
+    def __str__(self):
+        s = ''
+        s += f"\nBank: {self.bank}"
+        s += f"\nPoints {Player.points(self)}"
+        s += f"\nBonus {Player.get_bonus(self)}"
+        for card in self.purchased:
+            s += f'\n +{card}'
+        for card in self.reserved:
+            s += f'\n ?{card}'
+        for noble in self.nobles:
+            s += f'\n !{noble}'
+
+        return s
+
     @staticmethod
     def won(player):
         return Player.points(player) >= d.POINTS_FOR_WIN

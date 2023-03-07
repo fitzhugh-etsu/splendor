@@ -8,6 +8,9 @@ class Noble(NamedTuple):
     points: int = 0
     cost: Gems = Gems()
 
+    def __str__(self):
+        return f"Cost: {self.cost} Points: {self.points}"
+
     @staticmethod
     def to_inputs(noble):
         return (noble.points,) + Gems.to_inputs(noble.cost)

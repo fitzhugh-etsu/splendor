@@ -68,3 +68,5 @@ class Bank(NamedTuple):
         # This is ok b/c of order of things (and FAST)
         return Bank(*Gems.subtract(bank, g1, **kwargs), gold=bank.gold)
 
+    def __str__(self):
+        return f"{int(self.gold)}G {int(self.diamond)}D {int(self.sapphire)}S {int(self.emerald)}E {int(self.ruby)}R {int(self.onyx)}O"

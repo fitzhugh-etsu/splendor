@@ -48,6 +48,20 @@ class Game(NamedTuple):
         except IndexError:
             return False
 
+    def __str__(game):
+        tiers = ''
+        for i in range(len(game.decks)):
+            tiers += f"\nT{i}:\n" + "\n".join([" " + str(card) for card in game.decks[i][0:4]])
+
+        players = "\n".join(["Player\n" + str(player) for player in game.players])
+
+        return f"""
+Bank: {game.bank}
+{tiers}
+Player: {game.turn % len(game.players)}
+{players}
+            """
+
     @staticmethod
     def setup_game(seed=None, players=4):
         gem_count = 7

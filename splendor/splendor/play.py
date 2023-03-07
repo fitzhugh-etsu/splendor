@@ -36,10 +36,10 @@ def noble_accept_action(game, affinity):
             return action[0]
     return None
 
-def winner(game):
+def winner(game, stalemate=False):
     winners = []
     for (i, player) in enumerate(game.players):
-        if Player.won(player):
+        if Player.won(player) or stalemate:
             # The tiebreakers are (points, purch
             winners.append((i,
                             # Most points
@@ -55,7 +55,9 @@ def winner(game):
 def play_game(networks, seed=None):
     # each_network indicates a player.
     game = Game.setup_game(players=len(networks), seed=seed)
-    while not winner(game):
+    stalemate = False
+    while not winner(game) and not stalemate:
+        passed = 0
         for player_i, network in enumerate(networks):
 
             possible_outputs = io.outputs(game)
@@ -92,8 +94,14 @@ def play_game(networks, seed=None):
 
             else:
                 print(f"Player {player_i} PASSES")
+                passed += 1
 
-    winner_i = winner(game)
+        if passed == len(networks):
+            print("Stalemate")
+            print(str(game))
+            stalemate = True
+
+    winner_i = winner(game, stalemate=stalemate)
     return (winner_i,
             [Player.points(p) for p in game.players])
 
