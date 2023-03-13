@@ -1,17 +1,26 @@
+from collections import defaultdict
 from typing import NamedTuple
 import lmdb
 
 class SearchDB(NamedTuple):
     # stores Q values for s,a (as defined in the paper)
-    Qsa: dict = {}
+    Qsa: defaultdict(lambda: defaultdict(float)),
+    # Qsa: dict = {}
+
     # stores # times edge s,a visited
-    Nsa: dict = {}
+    Nsa: defaultdict(lambda: defaultdict(int)),
+    # Nsa: dict = {}
+
     # stores # times s visited
-    Ns: dict = {}
+    Ns: defaultdict(lambda: int),
+    # Ns: dict = {}
+
     # stores initial policy, returned by neural net
     Ps: dict = {}
     # stores game.ended for board s?
-    Es: dict = {}
+    Ns: defaultdict(lambda: bool),
+    # Es: dict = {}
+
     # stores game.getValidMoves for board s
     Vs: dict = {}
 
@@ -44,12 +53,12 @@ def search(db, state, agent):
     return -v
 
 
-def get_action_probability(starting_board, agent, temp=1, simulations=500):
+def get_agent_intent(starting_board, agent, temp=1, simulations=500):
     """
     This function performs numMCTSSims simulations of MCTS starting from
     canonicalBoard.
     Returns:
-        probs: a policy vector where the probability of the ith action is
+        probs: a policy vector where the probability of the ith intent is
                 proportional to Nsa[(s,a)]**(1./temp)
     """
     db = SearchDB()
@@ -58,21 +67,28 @@ def get_action_probability(starting_board, agent, temp=1, simulations=500):
         search(db, starting_board, agent)
 
     # Now that we've filled in the DB, we can analyze it
-    counts = [db.Nsa[(s, a)]
-              if (s, a) in db.Nsa
+
+    # Want to return a list of probabilities for actions
+
+    # This will take the starting board and
+    #   pull out a list of all the # actions
+    #   filling in 0s for any missing action
+    counts = [(i, db.Nsa[starting_board][a])
+              if s in db.Nsa and a in db.Nsa[starting_board]
               else 0
-              for a in len(io.actions(starting_board))]
-
-
-    ########
-    ### CONTINUE
-    ########
+              for (i, a) in enumerate(len(io.actions(starting_board)))]
 
     if temp == 0:
-        bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
-        bestA = np.random.choice(bestAs)
-        probs = [0] * len(counts)
-        probs[bestA] = 1
+        max_count = max(db.Nsa[starting_board])
+
+        # Find the best intent index?
+        best_intent_i = random.choice(
+            [i for
+             (i, count) in enumerate(db.Nsa[starting_board])
+             if count == max_count
+            ])
+
+        # Find the intent with the highest counts
         return probs
 
     counts = [x ** (1. / temp) for x in counts]

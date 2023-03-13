@@ -1,4 +1,5 @@
 from itertools import chain, zip_longest
+from typing import NamedTuple
 
 from . import actions
 from .models import Bank, Card, Game, Noble, Player
@@ -58,6 +59,12 @@ def outputs(game):
     # A list of outputs from the NN maps to these actions.
     # The list is constant, so invalid actions are None. Valid ones give a PerformedAction
     return list(actions.valid_actions(game, yield_invalid=True))
+
+class AgentIntent(NamedTuple):
+    position_quality: float = 0.0
+    resource_affinity: list = [0.0] * 6
+    noble_affinity: list = [0.0] * 5
+    action_probabilities: list = []
 
 if __name__ == "__main__":
     print(inputs(Game.setup_game()))

@@ -458,38 +458,39 @@ def noble_accept_action(game, affinity):
 def evaluate_player_intent(game, agent_intent):
     player_i = game.turn % len(game.players)
 
-    (_,
-     resource_affinity,
-     noble_affinity,
-     action_probabilities) = agent_intent
-
     possible_outputs = io.outputs(game)
 
     # Pick action
-    action_p = [(possible_outputs[i] and action_probabilities[i]) or 0
+    action_p = [(possible_outputs[i] and agent_intent.action_probabilities[i]) or 0
                 for i in
-                range(len(action_probabilities))]
+                range(len(agent_intent.action_probabilities))]
 
     if any(action_p):
         action = random.choices(
             possible_outputs,
-            weights=action_p,
+            weights=agent_intent.action_probabilities,
             k=1)[0]
 
+        #  TODO??????
+        #  WHY NULL?
+        if not action:
+            import pudb; pudb.set_trace()
         print(f"Player {player_i} chose {action.action}")
         # Now check for payback gems
-        while (gem_action := gem_return_action(game, resource_affinity)):
+        while (gem_action := gem_return_action(game, agent_intent.resource_affinity)):
             print(f"Player {player_i} decided {gem_action.action}")
             action = gem_action
             game = action.game
 
         # Now check for noble visits
-        if (noble_action := noble_accept_action(game, noble_affinity)):
+        if (noble_action := noble_accept_action(game, agent_intent.noble_affinity)):
             print(f"Player {player_i} decided {noble_action.action}")
             action = noble_action
             game = action.game
-
-        return action
     else:
         print(f"Player {player_i} PASSES")
-        return PerformedAction(action=None, game=pass_turn(game))
+        action =  PerformedAction(
+            action=None,
+            game=pass_turn(game))
+
+    return action
