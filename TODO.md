@@ -1,7 +1,9 @@
-# Handle drawing the board (even quickly?)
+# outputs needs to include the affiniities values integrally (something like that)..
 
-# Handle 10 gem limit end of turn 
+# Change the play to run itself with the vector, and then the affinities / states....
 
-###  (which to return? as actions)
+# The getActionProb get_action_probability - finish implementing.
 
-# Handle saving to lmdb?
+# The coach, which is learning.
+Use LMDB to store things - so we can restart at any point.
+Parallelize the MCTS ?

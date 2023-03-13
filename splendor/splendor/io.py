@@ -4,6 +4,7 @@ from . import actions
 from .models import Bank, Card, Game, Noble, Player
 
 
+
 def inputs(game):
     """ These are the inputs to a NN.
       constant size, no matter how many players there are.

@@ -1,3 +1,5 @@
+import splendor.io as io
+import random
 from enum import Enum
 from typing import NamedTuple
 
@@ -75,6 +77,9 @@ def _get_player(game):
     player = game.players[player_i]
 
     return (player_i, player)
+
+def pass_turn(game):
+    return _new_turn(game)
 
 def pick_gems(game, gems):
     player_i, player = _get_player(game)
@@ -417,3 +422,74 @@ def next_game_actions(game):
 
     # Otherwise
     return (True, list(valid_actions(game)))
+
+def gem_return_action(game, affinity):
+    more = True
+
+    while more:
+        action_list = list(valid_payback_actions_for_last_player(game, yield_invalid=True))
+        more = any(action_list)
+
+        if more:
+            action = random.choices(
+                action_list,
+                weights=[(action_list[i] and affinity[i]) or 0
+                         for i in
+                         range(len(action_list))])
+            return action[0]
+    return None
+
+def noble_accept_action(game, affinity):
+    more = True
+
+    while more:
+        action_list = list(valid_nobles_for_last_player(game, yield_invalid=True))
+        more = any(action_list)
+
+        if more:
+            action = random.choices(
+                action_list,
+                weights=[(action_list[i] and affinity[i]) or 0
+                         for i in
+                         range(len(action_list))])
+            return action[0]
+    return None
+
+def evaluate_player_intent(game, agent_intent):
+    player_i = game.turn % len(game.players)
+
+    (_,
+     resource_affinity,
+     noble_affinity,
+     action_probabilities) = agent_intent
+
+    possible_outputs = io.outputs(game)
+
+    # Pick action
+    action_p = [(possible_outputs[i] and action_probabilities[i]) or 0
+                for i in
+                range(len(action_probabilities))]
+
+    if any(action_p):
+        action = random.choices(
+            possible_outputs,
+            weights=action_p,
+            k=1)[0]
+
+        print(f"Player {player_i} chose {action.action}")
+        # Now check for payback gems
+        while (gem_action := gem_return_action(game, resource_affinity)):
+            print(f"Player {player_i} decided {gem_action.action}")
+            action = gem_action
+            game = action.game
+
+        # Now check for noble visits
+        if (noble_action := noble_accept_action(game, noble_affinity)):
+            print(f"Player {player_i} decided {noble_action.action}")
+            action = noble_action
+            game = action.game
+
+        return action
+    else:
+        print(f"Player {player_i} PASSES")
+        return PerformedAction(action=None, game=pass_turn(game))
