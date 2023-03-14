@@ -1,5 +1,4 @@
-# Why is random choice None?
-
+# Finish search  (tests)
 # The getActionProb get_action_probability - finish implementing.
 
 # The coach, which is managing learning...

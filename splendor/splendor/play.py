@@ -23,6 +23,7 @@ def winner(game, stalemate=False):
 def play_game(agents, seed=None):
     # each_agent indicates a player.
     game = Game.setup_game(players=len(agents), seed=seed)
+
     stalemate = False
     while not winner(game) and not stalemate:
         passed = 0
@@ -35,7 +36,7 @@ def play_game(agents, seed=None):
                 io.inputs(game),
                 possible_outputs)
 
-            action = actions.evaluate_player_intent(game, agent_intent)
+            action = actions.evaluate_player_intent(game, agent_intent, seed=seed)
 
             if not action.action:
                 passed += 1
@@ -53,5 +54,10 @@ def play_game(agents, seed=None):
 
 if __name__ == "__main__":
     from .agents import idiot
+    agents = [
+        idiot.create(seed=101),
+        idiot.create(seed=102),
+        idiot.create(seed=103),
+        idiot.create(seed=104)]
 
-    print(play_game([idiot] * 4, seed=1))
+    print(play_game(agents, seed=1))
