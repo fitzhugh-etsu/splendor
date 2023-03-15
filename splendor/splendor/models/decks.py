@@ -57,7 +57,7 @@ def tier_0_deck(seed=None):
         Card(points=0, bonus=RUBY, cost=Gems(diamond=3, sapphire=0, emerald=0, ruby=0, onyx=0)),
         Card(points=1, bonus=RUBY, cost=Gems(diamond=4, sapphire=0, emerald=0, ruby=0, onyx=0)))
 
-    return random.Random(seed).sample(all_cards, len(all_cards))
+    return tuple(random.Random(seed).sample(all_cards, len(all_cards)))
 
 def tier_1_deck(seed=None):
     all_cards = (
@@ -95,7 +95,7 @@ def tier_1_deck(seed=None):
         Card(points=2, bonus=RUBY, cost=Gems(diamond=3, sapphire=0, emerald=0, ruby=0, onyx=5)),
         Card(points=2, bonus=RUBY, cost=Gems(diamond=0, sapphire=0, emerald=0, ruby=0, onyx=5)),
         Card(points=3, bonus=RUBY, cost=Gems(diamond=0, sapphire=0, emerald=0, ruby=6, onyx=0)))
-    return random.Random(seed).sample(all_cards, len(all_cards))
+    return tuple(random.Random(seed).sample(all_cards, len(all_cards)))
 
 def tier_2_deck(seed=None):
     all_cards = (
@@ -120,7 +120,7 @@ def tier_2_deck(seed=None):
         Card(points=4, bonus=RUBY, cost=Gems(diamond=0, sapphire=3, emerald=6, ruby=3, onyx=0)),
         Card(points=5, bonus=RUBY, cost=Gems(diamond=0, sapphire=0, emerald=7, ruby=3, onyx=0)))
 
-    return random.Random(seed).sample(all_cards, len(all_cards))
+    return tuple(random.Random(seed).sample(all_cards, len(all_cards)))
 
 def nobles_deck(seed=None):
     all_cards = (
@@ -135,4 +135,4 @@ def nobles_deck(seed=None):
         Noble(points=3, cost=Gems(diamond=3, sapphire=3, emerald=3, ruby=0, onyx=0)),
         Noble(points=3, cost=Gems(diamond=3, sapphire=0, emerald=0, ruby=3, onyx=3)))
 
-    return random.Random(seed).sample(all_cards, len(all_cards))
+    return tuple(random.Random(seed).sample(all_cards, len(all_cards)))

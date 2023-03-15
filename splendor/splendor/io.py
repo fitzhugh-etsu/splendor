@@ -60,14 +60,6 @@ def outputs(game):
     # The list is constant, so invalid actions are None. Valid ones give a PerformedAction
     return list(actions.valid_actions(game, yield_invalid=True))
 
-OUTPUTS_LEN = len(list(actions.valid_actions(Game.setup_game(), yield_inalid=True)))
-
-class AgentIntent(NamedTuple):
-    position_quality: float = 0.0
-    resource_affinity: list = [0.0] * 6
-    noble_affinity: list = [0.0] * 5
-    action_probabilities: list = []
-
 if __name__ == "__main__":
     print(inputs(Game.setup_game()))
     print(list(outputs(Game.setup_game())))

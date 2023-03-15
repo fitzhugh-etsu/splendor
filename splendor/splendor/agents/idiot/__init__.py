@@ -1,24 +1,18 @@
 import random
-from splendor.io import AgentIntent, OUTPUTS_LEN
-from typing import NamedTuple
+from splendor.models.actions import AgentIntent, ValidPlayerActions
 
 
-class IdiotAgent(NamedTuple):
+class IdiotAgent():
     random: random.Random
+    def __init__(self, seed=None):
+        self.random = random.Random(seed)
 
-    @staticmethod
-    def evaluate(agent, inputs):
-
+    def evaluate(self, inputs):
         return AgentIntent(
-            position_quality=agent.random.random(),  # How good is the board position?
-            resource_affinity=[agent.random.random()] * 6,  # Resource affinity
-            noble_affinity=[agent.random.random()] * 5,  # Noble affinity
-            action_probabilities=[agent.random.random()] * OUTPUTS_LEN))
+            position_quality=self.random.random(),  # How good is the board position?
+            resource_affinity=[self.random.random()] * 6,  # Resource affinity
+            noble_affinity=[self.random.random()] * 5,  # Noble affinity
+            action_probabilities=[self.random.random()] * len(ValidPlayerActions))
 
-    @staticmethod
-    def train(agent, actions, weight):
-        return agent
-
-def create(seed=None):
-    return IdiotAgent(
-        random=random.Random(seed))
+    def train(self, actions, weight):
+        pass
