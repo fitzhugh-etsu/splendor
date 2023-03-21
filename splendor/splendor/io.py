@@ -5,7 +5,6 @@ from . import actions
 from .models import Bank, Card, Game, Noble, Player
 
 
-
 def inputs(game):
     """ These are the inputs to a NN.
       constant size, no matter how many players there are.
@@ -44,13 +43,15 @@ def inputs(game):
 
     #  current_player: int = 3
     player_i = game.turn % len(game.players)
-    inputs.append(player_i)
+
+    # Insert "YOU"
+    inputs.extend(Player.to_inputs(game.players[player_i], is_current_player=True))
 
     for (i, player) in zip_longest(
-            range(4),
-            game.players[0:4],
+            range(3),
+            game.players[0:player_i] + game.players[player_i + 1:],
             fillvalue=Player()):
-        inputs.extend(Player.to_inputs(player, is_current_player=(i == player_i)))
+        inputs.extend(Player.to_inputs(player, is_current_player=False))
 
     return inputs
 

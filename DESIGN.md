@@ -41,3 +41,9 @@ http://scholarworks.unr.edu:8080/bitstream/handle/11714/3451/Zerbel_unr_0139M_12
 
 # HRM
 https://link.springer.com/article/10.1007/s10462-022-10228-y
+
+#  MCTS
+https://medium.com/@_michelangelo_/monte-carlo-tree-search-mcts-algorithm-for-dummies-74b2bae53bfa
+
+# MCTS
+https://int8.io/monte-carlo-tree-search-beginners-guide/#Monte_Carlo_Tree_Search_8211_basic_concepts

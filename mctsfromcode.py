@@ -20,6 +20,24 @@ self.Es = {}
 # stores game.getValidMoves for board s
 self.Vs = {}
 
+    # stores Q values for s,a (as defined in the paper)
+    Qsa: dict = defaultdict(lambda: defaultdict(float))
+    # Qsa: dict = {}
+
+    # stores # times edge s,a visited
+    Nsa: dict = defaultdict(lambda: defaultdict(int))
+    # Nsa: dict = {}
+
+    # stores # times s visited
+    Ns: dict = defaultdict(lambda: int)
+    # Ns: dict = {}
+
+    # stores game.ended for board s?
+    Es: dict = defaultdict(lambda: int),
+
+    # stores game.getValidMoves for board s
+    Vs: dict = {}
+
 s = self.game.stringRepresentation(canonicalBoard)
 
         if s not in self.Es:

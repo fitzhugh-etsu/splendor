@@ -12,13 +12,15 @@ class TestSearch(unittest.TestCase):
         game = Game.setup_game(seed=1)
         agent = IdiotAgent(seed=5)
 
-
         # Test it stays hashable
-        print(game.__hash__())
-        print(agent.evaluate(game))
-        print(-agent.evaluate(game))
-        intent = search.get_agent_intent(
+        intent = agent.evaluate(game)
+        -intent
+
+        action, intent = search.get_agent_intent(
             game,
             agent,
-            simulations=10,
+            simulations=100,
             seed=1)
+        print(action.action)
+        print(intent)
+        print(intent.game)

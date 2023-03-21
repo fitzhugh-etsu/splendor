@@ -12,7 +12,6 @@ class AgentIntent(NamedTuple):
     action_probabilities: tuple = ()
 
     def __neg__(self):
-        import pudb; pudb.set_trace()
         return AgentIntent(
             position_quality= -self.position_quality,
             resource_affinity=[-i for i in self.resource_affinity],

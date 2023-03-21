@@ -15,6 +15,13 @@ class Game(NamedTuple):
     turn: int = 0
 
     @staticmethod
+    def over(game):
+        for player in game.players:
+            if Player.won(player):
+                return True
+        return False
+
+    @staticmethod
     def replace_player(game, player_i: int, player: Player):
         new_players = (
             game.players[0:player_i] +
