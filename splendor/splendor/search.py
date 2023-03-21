@@ -1,3 +1,4 @@
+from .models.actions import pass_turn, PerformedAction
 from dotted_dict import DottedDict
 from math import log, sqrt
 import random
@@ -46,6 +47,7 @@ def _mcts(db, game, player_i, agent, cpuct=1.0):
             db[game].reward = intent.position_quality
 
         # Return this position value - since we just found this node
+
         db[game].intent = intent
         return db[game].reward
     else:
@@ -60,30 +62,42 @@ def _mcts(db, game, player_i, agent, cpuct=1.0):
                 option = DottedDict(dict(count=0, reward=0))
             # Pull action probability from the intent
             return ((option.reward / (1 + option.count)) +
-                    cpuct * child.prob * sqrt(log(1 + db[game].count) / (1 + option.count)))
+                    cpuct * child.prob * sqrt(log(1 + db[game].count) /
+                                              (1 + option.count)))
 
         # Look at children
-        best = max(db[game].children, key=u)
+        if db[game].children:
+            best = max(db[game].children, key=u)
 
-        # Search on that action.
-        child_reward = _mcts(db, best.action.game, player_i, agent, cpuct=cpuct)
+            # Search on that action.
+            child_reward = _mcts(db, best.action.game, player_i, agent, cpuct=cpuct)
 
-        # ?? Q[s][a] = (N[s][a]*Q[s][a] + v)/(N[s][a]+1)
-        db[game].reward += child_reward
-        db[game].count += 1
+            # Normalize it.
+            db[game].reward += ((db[game].count * db[game].reward) + child_reward) / (db[game].count + 1)
 
-        return child_reward
+            db[game].count += 1
+
+            return child_reward
+        else:
+            print(list(actions.valid_actions(game)))
+            input('check valid actions?')
+            # No possible moves.
+            db[game].count += 1
+            db[game].reward = 0
+            return 0
+
 
 def create_db():
     return defaultdict(lambda: DottedDict(dict(count=0, action=None, reward=0, intent=None, children=list())))
 
-def monte_carlo_tree_search(game, player_i, agent, db=None, cpuct=1.0):
+def monte_carlo_tree_search(game, agent, db=None, cpuct=1.0):
     if not db:
         db = create_db()
+    player_i = (game.turn % len(game.players))
     return _mcts(db, game, player_i, agent, cpuct=cpuct)
 
 def get_agent_intent(
-    starting_board,
+    game,
     agent,
     temp=1,
     simulations=500,
@@ -96,14 +110,25 @@ def get_agent_intent(
                 proportional to Nsa[(s,a)]**(1./temp)
     """
     db = create_db()
-    player_i = (starting_board.turn % len(starting_board.players))
+    player_i = (game.turn % len(game.players))
 
     for i in range(simulations):
-        _mcts(db, starting_board, player_i, agent)
+        _mcts(db, game, player_i, agent)
 
-    # Now that we've filled in the DB with details, we can analyze it
-    best_action, db_record = max([(c.action, db[c.action.game]) for c
-                                  in db[starting_board].children], key=lambda r: r[1].reward)
-    # Want to return a list of probabilities for actions
+    possible_child_actions = [
+        (c.action, db[c.action.game]) for c
+        in db[game].children]
 
-    return best_action, db_record.intent
+    if possible_child_actions:
+        # Now that we've filled in the DB with details, we can analyze it
+        best_action, db_record = max(possible_child_actions, key=lambda r: r[1].reward)
+        # Want to return a list of probabilities for actions
+
+        return best_action, db_record.intent
+    else:
+        input('best action performed blank')
+
+        best_action =  PerformedAction(
+            action=None,
+            game=pass_turn(game))
+        return (best_action, None)

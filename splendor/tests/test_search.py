@@ -21,6 +21,3 @@ class TestSearch(unittest.TestCase):
             agent,
             simulations=100,
             seed=1)
-        print(action.action)
-        print(intent)
-        print(intent.game)
