@@ -16,13 +16,12 @@ def _normalize(thelist):
     total = sum(thelist)
     return [ i / total for i in thelist]
 
-def _mcts(db, game, player_i, agent, cpuct=1.0):
+def _mcts(db, game, player_i, agent, cpuct=1.0, seed=None):
     is_player_active = player_i == (game.turn % len(game.players))
 
     # If we hit a terminal node
     #  either we won
     if Player.won(game.players[player_i]):
-        print("WON!")
         return WON_SCORE
     # Or someone else did (we lost!)
     elif Game.over(game):
@@ -67,10 +66,14 @@ def _mcts(db, game, player_i, agent, cpuct=1.0):
 
         # Look at children
         if db[game].children:
-            best = max(db[game].children, key=u)
+            scored_values = [(i, u(child)) for i, child in enumerate(db[game].children)]
+            max_score = max([v for (_, v) in scored_values])
+
+            best_i = random.Random(seed).choice([i for (i, v) in scored_values if v >= max_score])
+            best = db[game].children[best_i]
 
             # Search on that action.
-            child_reward = _mcts(db, best.action.game, player_i, agent, cpuct=cpuct)
+            child_reward = _mcts(db, best.action.game, player_i, agent, cpuct=cpuct, seed=seed)
 
             # Normalize it.
             db[game].reward += ((db[game].count * db[game].reward) + child_reward) / (db[game].count + 1)
@@ -79,8 +82,6 @@ def _mcts(db, game, player_i, agent, cpuct=1.0):
 
             return child_reward
         else:
-            print(list(actions.valid_actions(game)))
-            input('check valid actions?')
             # No possible moves.
             db[game].count += 1
             db[game].reward = 0
@@ -90,11 +91,11 @@ def _mcts(db, game, player_i, agent, cpuct=1.0):
 def create_db():
     return defaultdict(lambda: DottedDict(dict(count=0, action=None, reward=0, intent=None, children=list())))
 
-def monte_carlo_tree_search(game, agent, db=None, cpuct=1.0):
+def monte_carlo_tree_search(game, agent, db=None, cpuct=1.0, seed=None):
     if not db:
         db = create_db()
     player_i = (game.turn % len(game.players))
-    return _mcts(db, game, player_i, agent, cpuct=cpuct)
+    return _mcts(db, game, player_i, agent, cpuct=cpuct, seed=seed)
 
 def get_agent_intent(
     game,
@@ -111,23 +112,33 @@ def get_agent_intent(
     """
     db = create_db()
     player_i = (game.turn % len(game.players))
+    def visited(game):
+        return game in db
 
     for i in range(simulations):
-        _mcts(db, game, player_i, agent)
+        _mcts(db, game, player_i, agent, seed=seed)
 
+    # Now that we've filled in the DB with details, we can analyze it
+
+    # Find possible actions (only visited children)
     possible_child_actions = [
         (c.action, db[c.action.game]) for c
-        in db[game].children]
+        in db[game].children
+        # Needs to have been visited
+        if visited(c.action.game)]
 
     if possible_child_actions:
-        # Now that we've filled in the DB with details, we can analyze it
-        best_action, db_record = max(possible_child_actions, key=lambda r: r[1].reward)
-        # Want to return a list of probabilities for actions
+        # Find out the max reward score
+        max_reward = max([a[1].reward for a in possible_child_actions])
+        # which are possible
+        max_value_actions = [a for a in possible_child_actions if a[1].reward >= max_reward]
+        best_action, db_record = random.Random(seed).choice(max_value_actions)
 
+        # Want to return a list of probabilities for actions
         return best_action, db_record.intent
     else:
-        input('best action performed blank')
-
+        print("possible actions len: ", len(possible_child_actions))
+        print("passing?")
         best_action =  PerformedAction(
             action=None,
             game=pass_turn(game))

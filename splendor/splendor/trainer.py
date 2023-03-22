@@ -22,7 +22,6 @@ def run_episode(agent, seed=None, players=4, mcts_count=12000):
 
             passes = 0
 
-        print(f"Game turn: {game.turn} - {mcts_count}")
         action, intent = agent_intent = search.get_agent_intent(
             game, agent,
             simulations=mcts_count, seed=seed)
@@ -33,13 +32,10 @@ def run_episode(agent, seed=None, players=4, mcts_count=12000):
         if intent:
             action = actions.evaluate_player_intent(game, intent)
         else:
-            print(action, intent)
-            input('action...')
+            print("PASSES")
             passes += 1
 
         game = action.game
-
-
 
     if Player.won(game.players[player_i]):
        return zip(actions_list, itertools.repeat(search.WON_SCORE))

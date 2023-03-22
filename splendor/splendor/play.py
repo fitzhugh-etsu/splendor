@@ -46,8 +46,8 @@ def play_game(agent, players=4, seed=None):
         game = action.game
 
     winner_i = winner(game, stalemate=stalemate)
-    return (winner_i,
-            [Player.points(p) for p in game.players])
+    return dict(winner_index=winner_i,
+            points=[Player.points(p) for p in game.players])
 
 if __name__ == "__main__":
     from .agents.idiot import IdiotAgent

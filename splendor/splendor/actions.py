@@ -114,7 +114,7 @@ def evaluate_player_intent(game, agent_intent, seed=None):
             game = action.game
     else:
         print(f"Player {player_i} PASSES")
-        action =  PerformedAction(
+        action = PerformedAction(
             action=None,
             game=pass_turn(game))
 

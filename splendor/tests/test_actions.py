@@ -1,6 +1,7 @@
 import unittest
 
 import splendor.actions as actions
+import splendor.models.actions as model_actions
 from splendor.actions import (ValidGemPaybackActions, ValidNobleActions,
                               ValidPlayerActions)
 from splendor.models import Bank, Card, Game, Gems, Player
@@ -173,27 +174,27 @@ class TestActions(unittest.TestCase):
         game = Game.setup_game(seed=1)
 
         self.assertTrue(
-            actions.pick_gems(
+            model_actions.pick_gems(
                 game,
                 Gems(diamond=2)))
 
         self.assertTrue(
-            actions.pick_gems(
+            model_actions.pick_gems(
                 game,
                 Gems(diamond=1, sapphire=1, onyx=1)))
 
         self.assertFalse(
-            actions.pick_gems(
+            model_actions.pick_gems(
                 game,
                 Gems(diamond=2, sapphire=1, onyx=2)))
 
         self.assertFalse(
-            actions.pick_gems(
+            model_actions.pick_gems(
                 game,
                 Gems(diamond=4)))
 
         self.assertFalse(
-            actions.pick_gems(
+            model_actions.pick_gems(
                 game,
                 Gems(diamond=99)))
 
