@@ -28,7 +28,7 @@ def _mcts(db, game, player_i, agent, cpuct=1.0, seed=None):
         return LOST_SCORE
 
     if game not in db:
-        intent = agent.evaluate(game)
+        intent = agent.evaluate(io.inputs(game))
         # Get a list of valid moves and slap them into the
         # Chidren, with  probabilities included
         db[game].children = [DottedDict(action=a, prob=p) for (a, p) in

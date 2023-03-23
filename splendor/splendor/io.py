@@ -55,6 +55,8 @@ def inputs(game):
 
     return inputs
 
+INPUTS_LEN = len(inputs(Game.setup_game()))
+
 def outputs(game):
     # These are the outputs from the NN.
     # A list of outputs from the NN maps to these actions.

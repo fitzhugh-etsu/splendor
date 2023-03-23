@@ -51,4 +51,6 @@ def play_game(agent, players=4, seed=None):
 
 if __name__ == "__main__":
     from .agents.idiot import IdiotAgent
+    from .agents.alpha import AlphaAgent
     print(play_game(IdiotAgent(seed=1), seed=1))
+    print(play_game(AlphaAgent(seed=1), seed=1))

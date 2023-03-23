@@ -10,7 +10,9 @@ setup(
         'py_cui',
         'termcolor',
         'dotted-dict',
-        'lmdb'
+        'lmdb',
+        'keras',
+        'tensorflow'
     ],
     dependency_links=[
     ],
