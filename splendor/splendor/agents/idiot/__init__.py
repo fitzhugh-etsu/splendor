@@ -18,8 +18,7 @@ class IdiotAgent():
             action_probabilities=[self.random.random()] * len(ValidPlayerActions))
 
     def train_new(self, history):
-        import pudb; pudb.set_trace()
-        print(history)
+        print("Train this agent on ", len(history), " now!")
         return IdiotAgent(
             trainings=self.trainings + 1,
             rand=self.random)

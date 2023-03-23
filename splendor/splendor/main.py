@@ -16,7 +16,7 @@ if __name__ == "__main__":
             agent,
             players=4,
             episodes=2,
-            episode_length=10,
+            episode_length=2,
             mcts_count=100)
 
         agents.save(agent_name, agent)

@@ -1,4 +1,4 @@
-from .models.actions import pass_turn, PerformedAction
+from .models.actions import pass_turn, PerformedAction, pass_intent
 from dotted_dict import DottedDict
 from math import log, sqrt
 import random
@@ -137,9 +137,8 @@ def get_agent_intent(
         # Want to return a list of probabilities for actions
         return best_action, db_record.intent
     else:
-        print("possible actions len: ", len(possible_child_actions))
-        print("passing?")
         best_action =  PerformedAction(
             action=None,
             game=pass_turn(game))
-        return (best_action, None)
+
+        return (best_action, pass_intent())

@@ -18,6 +18,9 @@ class AgentIntent(NamedTuple):
             noble_affinity=[-i for i in self.noble_affinity],
             action_probabilities=[-i for i in self.action_probabilities])
 
+def pass_intent():
+    return AgentIntent(action_probabilities=[0.0] * len(ValidPlayerActions))
+
 class PerformedAction(NamedTuple):
     action: None
     game: Game
