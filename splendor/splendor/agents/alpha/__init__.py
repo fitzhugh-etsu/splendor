@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import keras.optimizers
 import random
@@ -73,34 +74,29 @@ class AlphaAgent():
         vec = vec.reshape(-1, len(inputs), 1)
         results = self.network.predict(vec, verbose=0)[0]
 
-        return AgentIntent(
-            position_quality=results[0],
-            resource_affinity=tuple(results[1:7]),      # 6
-            noble_affinity=tuple(results[7:12]),        # 5
-            action_probabilities=tuple(results[12:]))   # rest of them
+        return AgentIntent.from_tuple(results)
 
-    def train(self, history):
-        print(history[0])
-        def to_vec(inputs):
-            vec = np.array(list(map(float, inputs)))
-            vec = vec.reshape(-1, len(inputs), 1)
-            return vec
+    def train_new(self, history):
+        import pudb; pudb.set_trace()
+        # history[N][1] = 1 / -1 for scoring
+        # history[N][0][0] = PerformedAction
+        # history[N][0][1] = Intent
+        training_set = [
+            (
+                # Inputs
+                np.array(io.inputs(h[0][0].game)),
+                # Targets
+                np.array(h[0][1].to_tuple()),
+                # Weights
+                h[1])
+            for h
+            in history
+            ]
+        new_obj = copy.deepcopy(self)
+        new_obj.trainings += 1
+        results = new_obj.network.fit(
+            x=training_set,
+            use_multiprocessing=True,
+            verbose=2)
 
-
-        input_boards, target_pis, target_vs = list(zip(*examples))
-        input_boards = np.asarray(input_boards)
-        target_pis = np.asarray(target_pis)
-        target_vs = np.asarray(target_vs)
-
-        """
-        input_boards = CONFIG.nnet_args.encoder.encode_multiple(input_boards)
-        """
-        input_boards = self.encoder.encode_multiple(input_boards)
-
-        self.nnet.model.fit(x=input_boards, y=[target_pis, target_vs], batch_size=CONFIG.nnet_args.batch_size, epochs=CONFIG.nnet_args.epochs, verbose=VERBOSE_MODEL_FIT)
-
-        self.network.a
-        print("Train this agent on ", len(history), " now!")
-        return IdiotAgent(
-            trainings=self.trainings + 1,
-            rand=self.random)
+        return new_obj

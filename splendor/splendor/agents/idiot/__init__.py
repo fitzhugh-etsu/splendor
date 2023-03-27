@@ -13,9 +13,9 @@ class IdiotAgent():
     def evaluate(self, inputs):
         return AgentIntent(
             position_quality=self.random.random(),  # How good is the board position?
-            resource_affinity=[self.random.random()] * 6,  # Resource affinity
-            noble_affinity=[self.random.random()] * 5,  # Noble affinity
-            action_probabilities=[self.random.random()] * len(ValidPlayerActions))
+            resource_affinity=tuple([self.random.random()] * 6),  # Resource affinity
+            noble_affinity=tuple([self.random.random()] * 5),  # Noble affinity
+            action_probabilities=tuple([self.random.random()] * len(ValidPlayerActions)))
 
     def train_new(self, history):
         print("Train this agent on ", len(history), " now!")

@@ -14,12 +14,28 @@ class AgentIntent(NamedTuple):
     def __neg__(self):
         return AgentIntent(
             position_quality= -self.position_quality,
-            resource_affinity=[-i for i in self.resource_affinity],
-            noble_affinity=[-i for i in self.noble_affinity],
-            action_probabilities=[-i for i in self.action_probabilities])
+            resource_affinity=tuple([-i for i in self.resource_affinity]),
+            noble_affinity=tuple([-i for i in self.noble_affinity]),
+            action_probabilities=tuple([-i for i in self.action_probabilities]))
+
+    @staticmethod
+    def from_tuple(results):
+        return AgentIntent(
+            position_quality=results[0],
+            resource_affinity=tuple(results[1:7]),      # 6
+            noble_affinity=tuple(results[7:12]),        # 5
+            action_probabilities=tuple(results[12:]))   # rest of them
+
+    def to_tuple(self):
+        return (
+            (self.position_quality, ) +
+            self.resource_affinity +
+            self.noble_affinity +
+            self.action_probabilities)
+
 
 def pass_intent():
-    return AgentIntent(action_probabilities=[0.0] * len(ValidPlayerActions))
+    return AgentIntent(action_probabilities=tuple([0.0] * len(ValidPlayerActions)))
 
 class PerformedAction(NamedTuple):
     action: None

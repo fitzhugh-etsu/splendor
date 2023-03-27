@@ -16,8 +16,8 @@ if __name__ == "__main__":
         agent = trainer.training_loop(
             agent,
             players=4,
-            episodes=2,
-            episode_length=2,
-            mcts_count=100)
+            episodes=1,
+            episode_length=1,
+            mcts_count=5)
 
         agents.save(agent_name, agent)
