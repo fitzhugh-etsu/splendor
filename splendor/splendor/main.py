@@ -2,25 +2,45 @@ import itertools
 
 import splendor.agents as agents
 from splendor.agents.alpha import AlphaAgent
-from splendor.agents.idiot import IdiotAgent
 
 from . import trainer
+
+
+def run_training_loop(agent):
+    import cProfile
+    import pstats
+    profiler = cProfile.Profile()
+    profiler.enable()
+    print("*" * 80)
+    print("*" * 80)
+    print("*" * 80)
+    print("*" * 80)
+    print(f"loop: {agent.trainings}")
+    print("*" * 80)
+    print("*" * 80)
+    print("*" * 80)
+    print("*" * 80)
+    agent = trainer.training_loop(
+        agent,
+        players=4,
+        episodes=1,
+        episode_length=16,
+        mcts_count=10000)
+
+    agents.save(agent_name, agent)
+
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats('cumtime')
+    stats.dump_stats('agent-training.profile')
+    stats.print_stats()
+
 
 if __name__ == "__main__":
     agent_name = 'alpha-agent'
     agent = agents.load(agent_name)
-    print(agent.__class__)
+
     if not agent:
         agent = AlphaAgent(seed=10)
     agents.save(agent_name, agent)
 
-    for (i, _) in enumerate(itertools.repeat(True)):
-        print(f"loop: {agent.trainings} / {i}")
-        agent = trainer.training_loop(
-            agent,
-            players=4,
-            episodes=10,
-            episode_length=10,
-            mcts_count=1000)
-
-        agents.save(agent_name, agent)
+    run_training_loop(agent)

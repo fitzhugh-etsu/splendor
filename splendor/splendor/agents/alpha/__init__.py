@@ -2,6 +2,7 @@ import copy
 import random
 
 import numpy as np
+import tensorflow as tf
 from keras.layers import BatchNormalization, Dense, Dropout, Input
 from keras.models import Model
 
@@ -56,7 +57,8 @@ class AlphaAgent():
     def evaluate(self, inputs):
         vec = np.array(list(map(float, inputs)))
         vec = vec.reshape(-1, len(inputs), 1)
-        results = self.network.predict(vec, verbose=0)[0]
+        tensor = tf.convert_to_tensor(vec)
+        results = self.network(tensor)[0]
 
         return AgentIntent.from_tuple(results)
 
@@ -64,21 +66,23 @@ class AlphaAgent():
         # history[N][1] = 1 / -1 for scoring
         # history[N][0][0] = PerformedAction
         # history[N][0][1] = Intent
-
         # Inputs
-        inputs = np.stack([np.array(io.inputs(h[0][0].game)) for h in history])
+        # inputs = np.stack([np.array(io.inputs(h[0][0].game)) for h in history])
+        inputs = np.stack([tf.convert_to_tensor(i[0]) for i in history])
         # Targets
-        targets = np.stack([np.array(h[0][1].to_tuple()) for h in history])
+        # targets = np.stack([np.array(h[0][1].to_tuple()) for h in history])
+        targets = np.stack([tf.convert_to_tensor(i[1]) for i in history])
         # Weights
-        weights = np.stack([np.array([h[1]]) for h in history])
+        # weights = np.stack([np.array([h[1]]) for h in history])
+        weights = np.stack([tf.convert_to_tensor(i[2]) for i in history])
 
         new_obj = copy.deepcopy(self)
         new_obj.trainings += 1
 
-        results = new_obj.network.fit(
+        new_obj.network.fit(
             x=inputs,
             y=[targets, weights],
             use_multiprocessing=True,
             verbose=2)
-        print(results)
+
         return new_obj

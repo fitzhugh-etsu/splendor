@@ -1,10 +1,14 @@
-import sys
 import itertools
-from .models import Game, Player
-from . import search
-from . import actions
+import sys
 
-def head_to_head_champion(mcqueen, mr_the_king,
+import splendor.io as io
+
+from . import actions, search
+from .models import Game, Player
+
+
+def head_to_head_champion(
+    mcqueen, mr_the_king,
     players=4, threshold=0.55,
         mcts_count=100,
         game_count=50, seed=None):
@@ -33,7 +37,7 @@ def head_to_head_champion(mcqueen, mr_the_king,
             else:
                 player_agent = mr_the_king
 
-            action, intent = agent_intent = search.get_agent_intent(
+            action, intent = search.get_agent_intent(
                 game,
                 player_agent,
                 simulations=mcts_count,
@@ -45,7 +49,6 @@ def head_to_head_champion(mcqueen, mr_the_king,
             else:
                 print(".", end='')
             sys.stdout.flush()
-
 
             action = actions.evaluate_player_intent(game, intent)
 
@@ -85,7 +88,9 @@ def run_episode(agent, seed=None, players=4, mcts_count=12000):
             game, agent,
             simulations=mcts_count, seed=seed)
 
-        actions_list.append(agent_intent)
+        actions_list.append((
+            io.inputs(action.game),
+            intent.to_tuple()))
 
         if action.action is None:
             print("PASSES")
@@ -97,9 +102,9 @@ def run_episode(agent, seed=None, players=4, mcts_count=12000):
         game = action.game
 
     if Player.won(game.players[player_i]):
-       return zip(actions_list, itertools.repeat(search.WON_SCORE))
+        return map(lambda r: (r[0], r[1], search.WON_SCORE), actions_list)
     else:
-       return zip(actions_list, itertools.repeat(search.LOST_SCORE))
+        return map(lambda r: (r[0], r[1], search.LOST_SCORE), actions_list)
 
 def training_loop(mr_the_king, seed=None, players=4,
                   episodes=10,
