@@ -1,7 +1,6 @@
-import itertools
-
 import splendor.agents as agents
 from splendor.agents.alpha import AlphaAgent
+from splendor.agents.idiot import IdiotAgent
 
 from . import trainer
 
@@ -23,9 +22,9 @@ def run_training_loop(agent):
     agent = trainer.training_loop(
         agent,
         players=4,
-        episodes=1,
+        episodes=10,
         episode_length=16,
-        mcts_count=10000)
+        mcts_count=5000)
 
     agents.save(agent_name, agent)
 
@@ -36,11 +35,13 @@ def run_training_loop(agent):
 
 
 if __name__ == "__main__":
-    agent_name = 'alpha-agent'
+    import sys
+    agent_name = sys.argv[1]#'alpha-agent'
     agent = agents.load(agent_name)
 
     if not agent:
-        agent = AlphaAgent(seed=10)
+        agent = AlphaAgent()
+    #agent = IdiotAgent()
     agents.save(agent_name, agent)
 
     run_training_loop(agent)

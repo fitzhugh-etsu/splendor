@@ -9,6 +9,8 @@ from keras.models import Model
 import splendor.io as io
 from splendor.models.actions import AgentIntent, ValidPlayerActions
 
+from ..idiot import IdiotAgent
+
 # IMAGE DUMP
 # keras.utils.plot_model(model, "my_first_model.png")
 
@@ -59,8 +61,9 @@ class AlphaAgent():
         vec = vec.reshape(-1, len(inputs), 1)
         tensor = tf.convert_to_tensor(vec)
         results = self.network(tensor)[0]
-
         return AgentIntent.from_tuple(results)
+
+        #  return IdiotAgent().evaluate(inputs)
 
     def train_new(self, history):
         # history[N][1] = 1 / -1 for scoring

@@ -1,5 +1,8 @@
-import itertools
+import copy
+import gc
 import sys
+
+import tensorflow as tf
 
 import splendor.io as io
 
@@ -84,7 +87,7 @@ def run_episode(agent, seed=None, players=4, mcts_count=12000):
 
             passes = 0
 
-        action, intent = agent_intent = search.get_agent_intent(
+        action, intent = search.get_agent_intent(
             game, agent,
             simulations=mcts_count, seed=seed)
 
