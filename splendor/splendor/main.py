@@ -36,12 +36,13 @@ def run_training_loop(agent):
 
 if __name__ == "__main__":
     import sys
-    agent_name = sys.argv[1]#'alpha-agent'
+
+    agent_name = 'agents/' + sys.argv[1]  # 'alpha-agent'
     agent = agents.load(agent_name)
 
     if not agent:
         agent = AlphaAgent()
-    #agent = IdiotAgent()
-    agents.save(agent_name, agent)
+        agents.save(agent_name, agent)
 
+    #agent = IdiotAgent()
     run_training_loop(agent)
